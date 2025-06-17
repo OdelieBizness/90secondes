@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Connexion Admin</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 400px; margin: 50px auto; padding: 20px; }
+        input { width: 100%; padding: 10px; margin: 10px 0; }
+        button { background: #4285F4; color: white; border: none; padding: 10px 15px; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <h2>Connexion Admin</h2>
+    <input type="email" id="email" placeholder="Email admin">
+    <input type="password" id="password" placeholder="Mot de passe">
+    <button id="login-btn">Se connecter</button>
+
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+    <script>
+        // Même configuration Firebase que dans les autres fichiers
+        const firebaseConfig = {
+            apiKey: "AIzaSyBofrTS4e4P55w-68cmK2GlXW4usc9656o",
+            authDomain: "secondes-avec-pst-d.firebaseapp.com",
+            projectId: "secondes-avec-pst-d",
+            storageBucket: "secondes-avec-pst-d.firebasestorage.app",
+            messagingSenderId: "502822204066",
+            appId: "1:502822204066:web:f170b15864e222f32f9dfb",
+            measurementId: "G-P1QY33FF40"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+
+        document.getElementById('login-btn').addEventListener('click', () => {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            
+            auth.signInWithEmailAndPassword(email, password)
+                .then(() => {
+                    window.location.href = "admin.html";
+                })
+                .catch(error => {
+                    alert("Erreur de connexion: " + error.message);
+                });
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin - 90 secondes avec Pasteur D</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #4a6fa5;
+            --secondary: #166088;
+            --light: #f8f9fa;
+            --dark: #343a40;
+            --success: #4CAF50;
+            --warning: #FFC107;
+            --danger: #F44336;
+        }
+        body {
+            font-family: 'Roboto', sans-serif;
+            line-height: 1.6;
+            color: var(--dark);
+            background-color: #f5f7fa;
+            margin: 0;
+            padding: 0;
+        }
+        .admin-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        h1 {
+            color: var(--primary);
+            margin: 0;
+            font-size: 1.8rem;
+        }
+        .logout-btn {
+            background: var(--danger);
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.9rem;
+        }
+        .filters {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 25px;
+            flex-wrap: wrap;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+        .filter-group {
+            flex: 1;
+            min-width: 200px;
+        }
+        .filter-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: #555;
+        }
+        select, input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-family: inherit;
+            font-size: 0.95rem;
+        }
+        .questions-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 15px;
+        }
+        .question-card {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            border-left: 4px solid var(--primary);
+            transition: all 0.3s;
+        }
+        .question-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        .question-card.new {
+            border-left-color: var(--primary);
+        }
+        .question-card.selected {
+            border-left-color: var(--warning);
+            background-color: #FFF8E1;
+        }
+        .question-card.answered {
+            border-left-color: var(--success);
+        }
+        .question-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+        .question-category {
+            background: #e0e0e0;
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            font-weight: 500;
+        }
+        .question-text {
+            margin: 15px 0;
+            font-size: 1.1rem;
+            line-height: 1.5;
+        }
+        .question-meta {
+            font-size: 0.85rem;
+            color: #666;
+            margin-bottom: 15px;
+        }
+        .status-badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            font-weight: 500;
+            color: white;
+        }
+        .status-new {
+            background: var(--primary);
+        }
+        .status-selected {
+            background: var(--warning);
+            color: var(--dark);
+        }
+        .status-answered {
+            background: var(--success);
+        }
+        .question-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+            flex-wrap: wrap;
+        }
+        .btn {
+            padding: 8px 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+        .btn-primary:hover {
+            background: var(--secondary);
+        }
+        .btn-success {
+            background: var(--success);
+            color: white;
+        }
+        .btn-success:hover {
+            background: #3d8b40;
+        }
+        .btn-warning {
+            background: var(--warning);
+            color: var(--dark);
+        }
+        .btn-warning:hover {
+            background: #e6b800;
+        }
+        .video-link-input {
+            flex: 1;
+            min-width: 200px;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: #666;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background-color: var(--success);
+            color: white;
+            padding: 12px 20px;
+            border-radius: 4px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+            z-index: 1000;
+            animation: fadeIn 0.3s;
+        }
+        .toast-error {
+            background-color: var(--danger);
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body>
+    <div class="admin-container">
+        <header>
+            <h1>Administration des questions</h1>
+            <button class="logout-btn" id="logout-btn">Déconnexion</button>
+        </header>
+        
+        <div class="filters">
+            <div class="filter-group">
+                <label for="filter-status">Statut</label>
+                <select id="filter-status">
+                    <option value="all">Toutes les questions</option>
+                    <option value="new">Nouvelles</option>
+                    <option value="selected">Sélectionnées</option>
+                    <option value="answered">Répondues</option>
+                </select>
+            </div>
+            
+            <div class="filter-group">
+                <label for="filter-category">Catégorie</label>
+                <select id="filter-category">
+                    <option value="all">Toutes catégories</option>
+                    <option value="vie-spirituelle">Vie spirituelle</option>
+                    <option value="relations">Relations & Amour</option>
+                    <option value="famille">Famille</option>
+                    <option value="finances">Finances</option>
+                    <option value="bible">Bible & Doctrine</option>
+                    <option value="ministere">Appel & Ministère</option>
+                    <option value="epreuves">Doutes & Épreuves</option>
+                </select>
+            </div>
+            
+            <div class="filter-group">
+                <label for="search">Recherche</label>
+                <input type="text" id="search" placeholder="Rechercher dans les questions...">
+            </div>
+        </div>
+        
+        <div class="questions-grid" id="questions-container">
+            <div class="loading">Chargement des questions...</div>
+        </div>
+    </div>
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+
+    <script>
+        // Configuration Firebase (identique à index.html)
+        const firebaseConfig = {
+            apiKey: "AIzaSyBofrTS4e4P55w-68cmK2GlXW4usc9656o",
+            authDomain: "secondes-avec-pst-d.firebaseapp.com",
+            projectId: "secondes-avec-pst-d",
+            storageBucket: "secondes-avec-pst-d.firebasestorage.app",
+            messagingSenderId: "502822204066",
+            appId: "1:502822204066:web:f170b15864e222f32f9dfb",
+            measurementId: "G-P1QY33FF40"
+        };
+        
+        // Initialiser Firebase
+        const app = firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+        const auth = firebase.auth();
+        const analytics = getAnalytics(app);
+
+        // Variables globales
+        let currentFilters = {
+            status: "all",
+            category: "all",
+            search: ""
+        };
+
+        // Vérifier l'authentification
+        function checkAuth() {
+            auth.onAuthStateChanged((user) => {
+                if (!user) {
+                    window.location.href = "login.html"; // Rediriger vers la page de connexion
+                } else {
+                    loadQuestions(); // Charger les questions une fois authentifié
+                }
+            });
+        }
+
+        // Charger les questions avec filtres
+        function loadQuestions() {
+            let query = db.collection("questions");
+            
+            // Appliquer les filtres
+            if (currentFilters.status !== "all") {
+                query = query.where("status", "==", currentFilters.status);
+            }
+            
+            if (currentFilters.category !== "all") {
+                query = query.where("category", "==", currentFilters.category);
+            }
+            
+            // Recherche textuelle
+            if (currentFilters.search) {
+                const searchTerm = currentFilters.search.toLowerCase();
+                query = query.orderBy("text").startAt(searchTerm).endAt(searchTerm + "\uf8ff");
+            } else {
+                query = query.orderBy("createdAt", "desc");
+            }
+            
+            document.getElementById("questions-container").innerHTML = '<div class="loading">Chargement des questions...</div>';
+            
+            query.get().then((querySnapshot) => {
+                const container = document.getElementById("questions-container");
+                container.innerHTML = "";
+                
+                if (querySnapshot.empty) {
+                    container.innerHTML = `
+                        <div class="empty-state">
+                            <h3>Aucune question trouvée</h3>
+                            <p>Aucune question ne correspond à vos critères de recherche.</p>
+                        </div>
+                    `;
+                    return;
+                }
+                
+                querySnapshot.forEach((doc) => {
+                    const data = doc.data();
+                    const questionElement = document.createElement("div");
+                    questionElement.className = `question-card ${data.status}`;
+                    questionElement.dataset.id = doc.id;
+                    
+                    questionElement.innerHTML = `
+                        <div class="question-header">
+                            <span class="question-category">${getCategoryName(data.category)}</span>
+                            <span class="status-badge status-${data.status}">${getStatusName(data.status)}</span>
+                        </div>
+                        <div class="question-text">${data.text}</div>
+                        <div class="question-meta">
+                            Posée par: ${data.author || "Anonyme"} • 
+                            ${data.votes || 0} votes • 
+                            ${formatDate(data.createdAt?.toDate())}
+                        </div>
+                        <div class="question-actions">
+                            ${data.status !== "answered" ? 
+                                `<button class="btn btn-primary">Voir les détails</button>` : ''}
+                            ${data.status === "new" ? 
+                                `<button class="btn btn-warning">Sélectionner</button>` : ''}
+                            ${data.status === "selected" ? 
+                                `<input type="text" class="video-link-input" placeholder="Lien vidéo YouTube..." value="${data.videoLink || ''}">
+                                 <button class="btn btn-success">Marquer comme répondue</button>` : ''}
+                            ${data.status === "answered" ? 
+                                `<a href="${data.videoLink}" target="_blank" class="btn btn-primary">Voir la vidéo</a>` : ''}
+                        </div>
+                    `;
+                    
+                    container.appendChild(questionElement);
+                });
+            }).catch((error) => {
+                console.error("Error loading questions: ", error);
+                showToast("Erreur lors du chargement des questions", "error");
+            });
+        }
+
+        // Helpers
+        function getCategoryName(categoryId) {
+            const categories = {
+                "vie-spirituelle": "Vie spirituelle",
+                "relations": "Relations & Amour",
+                "famille": "Famille",
+                "finances": "Finances",
+                "bible": "Bible & Doctrine",
+                "ministere": "Appel & Ministère",
+                "epreuves": "Doutes & Épreuves"
+            };
+            return categories[categoryId] || categoryId;
+        }
+
+        function getStatusName(status) {
+            const statusNames = {
+                "new": "Nouvelle",
+                "selected": "Sélectionnée",
+                "answered": "Répondu"
+            };
+            return statusNames[status] || status;
+        }
+
+        function formatDate(date) {
+            if (!date) return "";
+            return date.toLocaleDateString("fr-FR", {
+                day: "2-digit",
+                month: "2-digit",
+                year: "numeric",
+                hour: "2-digit",
+                minute: "2-digit"
+            });
+        }
+
+        // Gestion des filtres
+        document.getElementById("filter-status").addEventListener("change", (e) => {
+            currentFilters.status = e.target.value;
+            loadQuestions();
+        });
+
+        document.getElementById("filter-category").addEventListener("change", (e) => {
+            currentFilters.category = e.target.value;
+            loadQuestions();
+        });
+
+        document.getElementById("search").addEventListener("input", (e) => {
+            currentFilters.search = e.target.value.trim();
+            // Délai pour éviter de trop nombreuses requêtes
+            clearTimeout(this.searchTimer);
+            this.searchTimer = setTimeout(() => {
+                loadQuestions();
+            }, 500);
+        });
+
+        // Gestion des actions admin
+        document.addEventListener("click", async (e) => {
+            if (!e.target.classList.contains("btn")) return;
+            
+            const questionCard = e.target.closest(".question-card");
+            if (!questionCard) return;
+            
+            const questionId = questionCard.dataset.id;
+            const questionRef = db.collection("questions").doc(questionId);
+            
+            try {
+                if (e.target.classList.contains("btn-warning")) {
+                    // Sélectionner la question
+                    await questionRef.update({ status: "selected" });
+                    showToast("Question sélectionnée avec succès");
+                } 
+                else if (e.target.classList.contains("btn-success")) {
+                    // Marquer comme répondue
+                    const videoLinkInput = questionCard.querySelector(".video-link-input");
+                    const videoLink = videoLinkInput.value.trim();
+                    
+                    if (!videoLink) {
+                        showToast("Veuillez entrer un lien vidéo", "error");
+                        return;
+                    }
+                    
+                    await questionRef.update({ 
+                        status: "answered",
+                        videoLink: videoLink
+                    });
+                    showToast("Question marquée comme répondue");
+                }
+                
+                loadQuestions(); // Recharger la liste
+            } catch (error) {
+                console.error("Error updating question: ", error);
+                showToast("Erreur lors de la mise à jour", "error");
+            }
+        });
+
+        // Déconnexion
+        document.getElementById("logout-btn").addEventListener("click", () => {
+            auth.signOut().then(() => {
+                window.location.href = "login.html";
+            });
+        });
+
+        // Fonction pour afficher des notifications
+        function showToast(message, type = "success") {
+            const toast = document.createElement("div");
+            toast.className = `toast ${type === "error" ? "toast-error" : ""}`;
+            toast.textContent = message;
+            document.body.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.style.animation = "fadeOut 0.3s";
+                setTimeout(() => {
+                    toast.remove();
+                }, 300);
+            }, 3000);
+        }
+
+        // Initialisation
+        document.addEventListener("DOMContentLoaded", () => {
+            checkAuth();
+            
+            // Définir les valeurs des filtres par défaut
+            document.getElementById("filter-status").value = currentFilters.status;
+            document.getElementById("filter-category").value = currentFilters.category;
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,10 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /questions/{question} {
+      allow read: if true; // Tout le monde peut lire
+      allow create: if request.auth != null || request.auth == null; // Permet les soumissions anonymes
+      allow update, delete: if request.auth != null; // Seul l'admin peut modifier
+    }
+  }
+}

@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>90 secondes avec Pasteur D - Posez votre question</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #4a6fa5;
+            --secondary: #166088;
+            --light: #f8f9fa;
+            --dark: #343a40;
+            --success: #4CAF50;
+        }
+        body {
+            font-family: 'Roboto', sans-serif;
+            line-height: 1.6;
+            color: var(--dark);
+            background-color: var(--light);
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .container {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 20px;
+        }
+        @media (min-width: 768px) {
+            .container {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+        .card {
+            background-color: white;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: var(--primary);
+            margin-bottom: 10px;
+        }
+        h2 {
+            color: var(--secondary);
+            font-size: 1.3rem;
+            margin-top: 0;
+        }
+        form div {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+        }
+        input, textarea, select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-family: inherit;
+            font-size: 1rem;
+        }
+        textarea {
+            min-height: 120px;
+            resize: vertical;
+        }
+        button {
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 500;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: var(--secondary);
+        }
+        .question {
+            border-left: 3px solid var(--primary);
+            padding-left: 15px;
+            margin-bottom: 20px;
+            transition: all 0.3s;
+        }
+        .question:hover {
+            transform: translateY(-2px);
+        }
+        .question h3 {
+            margin-top: 0;
+            color: var(--dark);
+        }
+        .meta {
+            font-size: 0.85rem;
+            color: #666;
+            margin: 8px 0;
+        }
+        .answered {
+            border-left-color: var(--success);
+        }
+        .vote-btn {
+            background: none;
+            border: none;
+            color: var(--primary);
+            padding: 0;
+            margin-right: 10px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .video-link {
+            color: var(--success);
+            font-weight: 500;
+            text-decoration: none;
+        }
+        .video-link:hover {
+            text-decoration: underline;
+        }
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background-color: var(--success);
+            color: white;
+            padding: 12px 20px;
+            border-radius: 4px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+            z-index: 1000;
+            animation: fadeIn 0.3s;
+        }
+        .toast-error {
+            background-color: #f44336;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>90 secondes avec Pasteur D</h1>
+        <p>Posez votre question et recevez une réponse en vidéo de 90 secondes maximum !</p>
+    </header>
+
+    <div class="container">
+        <div class="card">
+            <h2>Posez votre question</h2>
+            <form id="question-form">
+                <div>
+                    <label for="author">Votre nom (optionnel)</label>
+                    <input type="text" id="author" placeholder="Restez anonyme si vous préférez">
+                </div>
+                
+                <div>
+                    <label for="category">Catégorie *</label>
+                    <select id="category" required>
+                        <option value="">-- Choisissez une catégorie --</option>
+                        <option value="vie-spirituelle">Vie spirituelle personnelle</option>
+                        <option value="relations">Relations & Amour</option>
+                        <option value="famille">Famille</option>
+                        <option value="finances">Finances</option>
+                        <option value="bible">Bible & Doctrine</option>
+                        <option value="ministere">Appel & Ministère</option>
+                        <option value="epreuves">Doutes & Épreuves</option>
+                    </select>
+                </div>
+                
+                <div>
+                    <label for="question">Votre question *</label>
+                    <textarea id="question" required placeholder="Ex: Comment garder une foi forte dans les moments difficiles ?"></textarea>
+                </div>
+                
+                <button type="submit">Envoyer la question</button>
+            </form>
+        </div>
+
+        <div class="card">
+            <h2>Questions récentes</h2>
+            <div id="questions-list">
+                <div class="loading">Chargement des questions...</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+
+    <script>
+        // Configuration Firebase (à remplacer avec vos informations)
+        const firebaseConfig = {
+            apiKey: "AIzaSyBofrTS4e4P55w-68cmK2GlXW4usc9656o",
+            authDomain: "secondes-avec-pst-d.firebaseapp.com",
+            projectId: "secondes-avec-pst-d",
+            storageBucket: "secondes-avec-pst-d.firebasestorage.app",
+            messagingSenderId: "502822204066",
+            appId: "1:502822204066:web:f170b15864e222f32f9dfb",
+            measurementId: "G-P1QY33FF40"
+        };
+        
+        // Initialiser Firebase
+        const app = firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+        const auth = firebase.auth();
+        const analytics = getAnalytics(app);
+
+        // Charger les questions depuis Firestore
+        function loadQuestions() {
+            db.collection("questions")
+                .orderBy("createdAt", "desc")
+                .limit(10)
+                .get()
+                .then((querySnapshot) => {
+                    const questionsList = document.getElementById("questions-list");
+                    questionsList.innerHTML = "";
+                    
+                    if (querySnapshot.empty) {
+                        questionsList.innerHTML = "<p>Aucune question pour le moment. Soyez le premier à poser une question !</p>";
+                        return;
+                    }
+                    
+                    querySnapshot.forEach((doc) => {
+                        const data = doc.data();
+                        const questionElement = document.createElement("div");
+                        questionElement.className = `question ${data.status === "answered" ? "answered" : ""}`;
+                        questionElement.dataset.id = doc.id;
+                        
+                        questionElement.innerHTML = `
+                            <h3>${data.text}</h3>
+                            <div class="meta">Catégorie: ${getCategoryName(data.category)} • 
+                                Posée par: ${data.author || "Anonyme"} • 
+                                ${data.votes || 0} vote${data.votes !== 1 ? "s" : ""}</div>
+                            ${data.status === "answered" ? 
+                                `<a href="${data.videoLink || "#"}" target="_blank" class="video-link">Voir la réponse en vidéo</a>` : 
+                                `<button class="vote-btn">👍 Soutenir cette question</button>`}
+                        `;
+                        
+                        questionsList.appendChild(questionElement);
+                    });
+                })
+                .catch((error) => {
+                    console.error("Error loading questions: ", error);
+                    showToast("Erreur lors du chargement des questions", "error");
+                });
+        }
+
+        // Helper pour les noms de catégories
+        function getCategoryName(categoryId) {
+            const categories = {
+                "vie-spirituelle": "Vie spirituelle",
+                "relations": "Relations & Amour",
+                "famille": "Famille",
+                "finances": "Finances",
+                "bible": "Bible & Doctrine",
+                "ministere": "Appel & Ministère",
+                "epreuves": "Doutes & Épreuves"
+            };
+            return categories[categoryId] || categoryId;
+        }
+
+        // Envoyer une nouvelle question
+        document.getElementById("question-form").addEventListener("submit", async (e) => {
+            e.preventDefault();
+            
+            const author = document.getElementById("author").value || "Anonyme";
+            const category = document.getElementById("category").value;
+            const questionText = document.getElementById("question").value;
+            
+            try {
+                await db.collection("questions").add({
+                    author: author,
+                    category: category,
+                    text: questionText,
+                    votes: 0,
+                    status: "new",
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
+                
+                document.getElementById("question-form").reset();
+                showToast("Merci pour votre question ! Pasteur D y répondra peut-être dans une prochaine vidéo.");
+                loadQuestions(); // Recharger la liste
+            } catch (error) {
+                console.error("Error adding question: ", error);
+                showToast("Une erreur s'est produite. Veuillez réessayer.", "error");
+            }
+        });
+
+        // Gérer les votes
+        document.addEventListener("click", async (e) => {
+            if (e.target.classList.contains("vote-btn")) {
+                const questionId = e.target.closest(".question").dataset.id;
+                
+                try {
+                    const questionRef = db.collection("questions").doc(questionId);
+                    await questionRef.update({
+                        votes: firebase.firestore.FieldValue.increment(1)
+                    });
+                    
+                    e.target.textContent = "👍 Merci pour votre vote !";
+                    e.target.disabled = true;
+                    loadQuestions(); // Recharger pour voir le nouveau nombre de votes
+                } catch (error) {
+                    console.error("Error updating vote: ", error);
+                    showToast("Erreur lors du vote", "error");
+                }
+            }
+        });
+
+        // Fonction pour afficher des notifications
+        function showToast(message, type = "success") {
+            const toast = document.createElement("div");
+            toast.className = `toast ${type === "error" ? "toast-error" : ""}`;
+            toast.textContent = message;
+            document.body.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.style.animation = "fadeOut 0.3s";
+                setTimeout(() => {
+                    toast.remove();
+                }, 300);
+            }, 3000);
+        }
+
+        // Charger les questions au démarrage
+        document.addEventListener("DOMContentLoaded", loadQuestions);
+    </script>
+</body>
+</html>
