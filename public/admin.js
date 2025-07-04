@@ -1,36 +1,36 @@
 // Charger les questions depuis Firestore
-function loadQuestions() {
-  db.collection("questions")
-    .orderBy("createdAt", "desc")
-    .limit(10)
-    .get()
-    .then((querySnapshot) => {
-      const questionsList = document.getElementById("questions-list");
-      questionsList.innerHTML = "";
+// function loadQuestions() {
+//   db.collection("questions")
+//     .orderBy("createdAt", "desc")
+//     .limit(10)
+//     .get()
+//     .then((querySnapshot) => {
+//       const questionsList = document.getElementById("questions-list");
+//       questionsList.innerHTML = "";
       
-      querySnapshot.forEach((doc) => {
-        const data = doc.data();
-        const questionElement = document.createElement("div");
-        questionElement.className = `question ${data.status === "answered" ? "answered" : ""}`;
-        questionElement.dataset.id = doc.id;
+//       querySnapshot.forEach((doc) => {
+//         const data = doc.data();
+//         const questionElement = document.createElement("div");
+//         questionElement.className = `question ${data.status === "answered" ? "answered" : ""}`;
+//         questionElement.dataset.id = doc.id;
         
-        questionElement.innerHTML = `
-          <h3>${data.text}</h3>
-          <div class="meta">Catégorie: ${getCategoryName(data.category)} • 
-            Posée par: ${data.author || "Anonyme"} • 
-            ${data.votes || 0} vote${data.votes !== 1 ? "s" : ""}</div>
-          ${data.status === "answered" ? 
-            `<a href="${data.videoLink || "#"}" target="_blank">Voir la réponse en vidéo</a>` : 
-            `<button class="vote-btn">👍 Soutenir cette question</button>`}
-        `;
+//         questionElement.innerHTML = `
+//           <h3>${data.text}</h3>
+//           <div class="meta">Catégorie: ${getCategoryName(data.category)} • 
+//             Posée par: ${data.author || "Anonyme"} • 
+//             ${data.votes || 0} vote${data.votes !== 1 ? "s" : ""}</div>
+//           ${data.status === "answered" ? 
+//             `<a href="${data.videoLink || "#"}" target="_blank">Voir la réponse en vidéo</a>` : 
+//             `<button class="vote-btn">👍 Soutenir cette question</button>`}
+//         `;
         
-        questionsList.appendChild(questionElement);
-      });
-    })
-    .catch((error) => {
-      console.error("Error loading questions: ", error);
-    });
-}
+//         questionsList.appendChild(questionElement);
+//       });
+//     })
+//     .catch((error) => {
+//       console.error("Error loading questions: ", error);
+//     });
+// }
 
 // Helper pour les noms de catégories
 function getCategoryName(categoryId) {

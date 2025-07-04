@@ -221,57 +221,175 @@
             from { opacity: 0; transform: translateY(20px); }
             to { opacity: 1; transform: translateY(0); }
         }
+
+        /* Styles pour les états de chargement */
+        .loading-state {
+          text-align: center;
+          padding: 20px;
+          display: none; /* Masqué par défaut */
+        }
+
+        .loading-state.active {
+          display: block; /* Visible seulement avec la classe active */
+        }
+
+        .loading-spinner {
+          border: 4px solid #f3f3f3;
+          border-top: 4px solid #3498db;
+          border-radius: 50%;
+          width: 30px;
+          height: 30px;
+          animation: spin 1s linear infinite;
+          margin: 0 auto;
+        }
+
+        @keyframes spin {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
+        }
+
+        /* Modal bouton 'Details' */
+        .question-modal {
+          position: fixed;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          background: rgba(0,0,0,0.5);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          z-index: 1000;
+        }
+
+        .modal-content {
+          background: white;
+          padding: 20px;
+          border-radius: 8px;
+          max-width: 600px;
+          width: 90%;
+          max-height: 80vh;
+          overflow-y: auto;
+        }
+
+        .meta-section {
+          background: #f5f5f5;
+          padding: 10px;
+          border-radius: 4px;
+          margin-bottom: 15px;
+        }
+
+        .question-text-detail {
+          white-space: pre-wrap;
+          line-height: 1.6;
+          margin: 15px 0;
+        }
+
+        .action-buttons {
+          display: flex;
+          gap: 10px;
+          margin-top: 20px;
+        }
+
+        .btn-edit, .btn-delete, .btn-close {
+          padding: 8px 12px;
+          border: none;
+          border-radius: 4px;
+          cursor: pointer;
+        }
+
+        .btn-edit { background: #FFC107; }
+        .btn-delete { background: #F44336; color: white; }
+        .btn-close { background: #2196F3; color: white; }
+
+        /* Styles pour la modal de gestion des réponses */
+        .modal {
+          display: none;
+          position: fixed;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          background: rgba(0, 0, 0, 0.5);
+          z-index: 1000;
+          align-items: center;
+          justify-content: center;
+        }
+
+        .modal-content {
+          background: white;
+          padding: 20px;
+          border-radius: 8px;
+          width: 80%;
+          max-width: 600px;
+          max-height: 80vh;
+          overflow-y: auto;
+        }
+
+        .modal.hidden {
+          display: none;
+        }
+
+        .modal.active {
+          display: flex;
+        }
+
+        .response-list {
+          margin: 20px 0;
+          border: 1px solid #eee;
+          padding: 15px;
+          border-radius: 8px;
+        }
+
+        .response-item {
+          display: flex;
+          justify-content: space-between;
+          padding: 10px;
+          border-bottom: 1px solid #ddd;
+        }
+
+        .response-actions button {
+          margin-left: 10px;
+          padding: 3px 8px;
+        }
+
+        .add-response {
+          margin-top: 20px;
+        }
+
+        .add-response input {
+          width: 100%;
+          margin: 5px 0;
+          padding: 8px;
+        }
+
+        .responses {
+          display: flex;
+          flex-direction: column;
+          gap: 8px;
+          margin-top: 10px;
+        }
+
+        .response {
+          display: flex;
+        }
+
+        .no-response {
+          color: #666;
+          font-style: italic;
+        }
     </style>
 </head>
-<body>
-    <div class="admin-container">
-        <header>
-            <h1>Administration des questions</h1>
-            <button class="logout-btn" id="logout-btn">Déconnexion</button>
-        </header>
-        
-        <div class="filters">
-            <div class="filter-group">
-                <label for="filter-status">Statut</label>
-                <select id="filter-status">
-                    <option value="all">Toutes les questions</option>
-                    <option value="new">Nouvelles</option>
-                    <option value="selected">Sélectionnées</option>
-                    <option value="answered">Répondues</option>
-                </select>
-            </div>
-            
-            <div class="filter-group">
-                <label for="filter-category">Catégorie</label>
-                <select id="filter-category">
-                    <option value="all">Toutes catégories</option>
-                    <option value="vie-spirituelle">Vie spirituelle</option>
-                    <option value="relations">Relations & Amour</option>
-                    <option value="famille">Famille</option>
-                    <option value="finances">Finances</option>
-                    <option value="bible">Bible & Doctrine</option>
-                    <option value="ministere">Appel & Ministère</option>
-                    <option value="epreuves">Doutes & Épreuves</option>
-                </select>
-            </div>
-            
-            <div class="filter-group">
-                <label for="search">Recherche</label>
-                <input type="text" id="search" placeholder="Rechercher dans les questions...">
-            </div>
-        </div>
-        
-        <div class="questions-grid" id="questions-container">
-            <div class="loading">Chargement des questions...</div>
-        </div>
-    </div>
-
-    <!-- Firebase SDK -->
+<!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
 
-    <script>
+    <script type="module">
+        // Import the functions you need from the SDKs you need
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-app.js";
+        import { getAnalytics } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-analytics.js";
+
         // Configuration Firebase (identique à index.html)
         const firebaseConfig = {
             apiKey: "AIzaSyBofrTS4e4P55w-68cmK2GlXW4usc9656o",
@@ -283,229 +401,531 @@
             measurementId: "G-P1QY33FF40"
         };
         
-        // Initialiser Firebase
-        const app = firebase.initializeApp(firebaseConfig);
-        const db = firebase.firestore();
-        const auth = firebase.auth();
-        const analytics = getAnalytics(app);
+        // 2. INITIALISATION FIREBASE
+        let db;
+        let auth;
+        let currentUser = null;
 
-        // Variables globales
-        let currentFilters = {
-            status: "all",
-            category: "all",
-            search: ""
-        };
-
-        // Vérifier l'authentification
-        function checkAuth() {
-            auth.onAuthStateChanged((user) => {
-                if (!user) {
-                    window.location.href = "login.html"; // Rediriger vers la page de connexion
-                } else {
-                    loadQuestions(); // Charger les questions une fois authentifié
-                }
-            });
-        }
-
-        // Charger les questions avec filtres
-        function loadQuestions() {
-            let query = db.collection("questions");
-            
-            // Appliquer les filtres
-            if (currentFilters.status !== "all") {
-                query = query.where("status", "==", currentFilters.status);
-            }
-            
-            if (currentFilters.category !== "all") {
-                query = query.where("category", "==", currentFilters.category);
-            }
-            
-            // Recherche textuelle
-            if (currentFilters.search) {
-                const searchTerm = currentFilters.search.toLowerCase();
-                query = query.orderBy("text").startAt(searchTerm).endAt(searchTerm + "\uf8ff");
+        function initializeFirebase() {
+          firebase.initializeApp(firebaseConfig);
+          db = firebase.firestore();
+          auth = firebase.auth();
+          
+          auth.onAuthStateChanged(user => {
+            if (user) {
+              currentUser = user;
+              console.log("Utilisateur connecté:", user.email);
+              loadQuestions();
             } else {
-                query = query.orderBy("createdAt", "desc");
+              console.log("Non connecté, redirection...");
+              window.location.href = "login.html";
             }
-            
-            document.getElementById("questions-container").innerHTML = '<div class="loading">Chargement des questions...</div>';
-            
-            query.get().then((querySnapshot) => {
-                const container = document.getElementById("questions-container");
-                container.innerHTML = "";
-                
-                if (querySnapshot.empty) {
-                    container.innerHTML = `
-                        <div class="empty-state">
-                            <h3>Aucune question trouvée</h3>
-                            <p>Aucune question ne correspond à vos critères de recherche.</p>
-                        </div>
-                    `;
-                    return;
-                }
-                
-                querySnapshot.forEach((doc) => {
-                    const data = doc.data();
-                    const questionElement = document.createElement("div");
-                    questionElement.className = `question-card ${data.status}`;
-                    questionElement.dataset.id = doc.id;
-                    
-                    questionElement.innerHTML = `
-                        <div class="question-header">
-                            <span class="question-category">${getCategoryName(data.category)}</span>
-                            <span class="status-badge status-${data.status}">${getStatusName(data.status)}</span>
-                        </div>
-                        <div class="question-text">${data.text}</div>
-                        <div class="question-meta">
-                            Posée par: ${data.author || "Anonyme"} • 
-                            ${data.votes || 0} votes • 
-                            ${formatDate(data.createdAt?.toDate())}
-                        </div>
-                        <div class="question-actions">
-                            ${data.status !== "answered" ? 
-                                `<button class="btn btn-primary">Voir les détails</button>` : ''}
-                            ${data.status === "new" ? 
-                                `<button class="btn btn-warning">Sélectionner</button>` : ''}
-                            ${data.status === "selected" ? 
-                                `<input type="text" class="video-link-input" placeholder="Lien vidéo YouTube..." value="${data.videoLink || ''}">
-                                 <button class="btn btn-success">Marquer comme répondue</button>` : ''}
-                            ${data.status === "answered" ? 
-                                `<a href="${data.videoLink}" target="_blank" class="btn btn-primary">Voir la vidéo</a>` : ''}
-                        </div>
-                    `;
-                    
-                    container.appendChild(questionElement);
-                });
-            }).catch((error) => {
-                console.error("Error loading questions: ", error);
-                showToast("Erreur lors du chargement des questions", "error");
-            });
+          });
         }
 
-        // Helpers
+        // 3. CHARGEMENT DES QUESTIONS
+        let isLoading = false;
+
+        async function loadQuestions() {
+          if (isLoading) return;
+
+          const container = document.getElementById('questions-container');
+          showLoading(container); // Affiche le spinner
+          
+          isLoading = true;
+
+          try {
+            const statusFilter = document.getElementById('filter-status').value;
+            const categoryFilter = document.getElementById('filter-category').value;
+            const searchText = document.getElementById('search').value.toLowerCase();
+
+            let query = db.collection("questions");
+
+            // Appliquez UN SEUL filtre côté serveur à la fois
+            if (statusFilter !== "all" && categoryFilter === "all") {
+              query = query.where("status", "==", statusFilter)
+                         .orderBy("createdAt", "desc");
+            } 
+            else if (categoryFilter !== "all" && statusFilter === "all") {
+              query = query.where("category", "==", categoryFilter)
+                         .orderBy("createdAt", "desc");
+            }
+            else {
+              // Si les deux filtres sont actifs OU recherche texte, filtrez côté client
+              query = query.orderBy("createdAt", "desc");
+            }
+
+            const snapshot = await query.get();
+            const container = document.getElementById('questions-container');
+            container.innerHTML = '';
+
+            // Filtrage côté client
+            const filteredDocs = [];
+            snapshot.forEach(doc => {
+              const data = doc.data();
+              const matchesStatus = statusFilter === "all" || data.status === statusFilter;
+              const matchesCategory = categoryFilter === "all" || data.category === categoryFilter;
+              const matchesSearch = !searchText || data.text.toLowerCase().includes(searchText);
+
+              if (matchesStatus && matchesCategory && matchesSearch) {
+                filteredDocs.push({ id: doc.id, ...data });
+              }
+            });
+
+            if (filteredDocs.length === 0) {
+              container.innerHTML = `<div class="empty-state">Aucune question trouvée</div>`;
+              return;
+            }
+
+            // Tri par date (si non déjà fait côté serveur)
+            filteredDocs.sort((a, b) => b.createdAt - a.createdAt);
+
+            // Affichage
+            filteredDocs.forEach(item => renderQuestion(item.id, item));
+
+          } catch (error) {
+            showError(container, error);
+          } finally {
+            isLoading = false;
+          }
+        }
+
+        // Fonctions utilitaires
+        function showLoading(container) {
+          container.innerHTML = `
+            <div class="loading-state active">
+              <div class="loading-spinner"></div>
+              <p>Chargement des questions...</p>
+            </div>
+          `;
+        }
+
+        function showError(container, error) {
+          container.innerHTML = `
+            <div class="error-state">
+              ❌ Erreur : ${error.message}
+              <button onclick="loadQuestions()">Réessayer</button>
+            </div>
+          `;
+        }
+
+        // 4. AFFICHAGE D'UNE QUESTION
+        function renderQuestion(id, data) {
+          const container = document.getElementById('questions-container');
+          const questionElement = document.createElement('div');
+          
+          questionElement.className = `question-card ${data.status}`;
+          questionElement.dataset.id = id;
+          
+          questionElement.innerHTML = `
+              <div class="question-header">
+                <span class="question-category">${getCategoryName(data.category)}</span>
+                <span class="status-badge status-${data.status}">${getStatusName(data.status)}</span>
+              </div>
+              <div class="question-text">${data.text}</div>
+              <div class="question-meta">
+                <strong>${data.author || "Anonyme"}</strong> • 
+                ${formatDate(data.createdAt?.toDate())} • 
+                ${data.votes || 0} votes
+              </div>
+              <div class="question-actions">
+                ${data.status !== 'answered' ? `
+                  <button class="btn btn-primary btn-view">Détails</button>
+                ` : ''}
+                
+                ${data.status === 'new' ? `
+                  <button class="btn btn-warning btn-select">Sélectionner</button>
+                ` : ''}
+                
+                ${data.status === 'selected' ? `
+                  <input type="text" class="video-link" placeholder="Lien YouTube..." value="${data.videoLink || ''}">
+                  <button class="btn btn-success btn-answer">Marquer comme répondue</button>
+                ` : ''}
+                
+                ${data.status === 'answered' 
+                  ? data.responses?.length > 0
+                    ? `
+                      <div class="responses">
+                        ${data.responses.map((res, i) => `
+                          <div class="response">
+                            <a href="${res.videoUrl}" target="_blank" class="btn btn-primary">
+                              Voir partie ${i + 1}: ${res.title}
+                            </a>
+                          </div>
+                        `).join('')}
+                      </div>
+                    `
+                    : data.videoLink
+                      ? `<a href="${data.videoLink}" target="_blank" class="btn btn-primary">Voir la réponse</a>`
+                      : '<span class="no-response">Réponse en préparation</span>'
+                  : ''
+                }
+              </div>
+            `;
+          
+          container.appendChild(questionElement);
+
+          // bouton Détails :
+          const detailsBtn = questionElement.querySelector('.btn-view');
+          if (detailsBtn) {
+            setupDetailsButton(detailsBtn, id, data);
+          }
+        }
+
+        // 5. GESTION DES ACTIONS ADMIN
+        document.addEventListener('click', async (e) => {
+          if (!currentUser) return;
+          
+          const questionCard = e.target.closest('.question-card');
+          if (!questionCard) return;
+          
+          const questionId = questionCard.dataset.id;
+          const questionRef = db.collection("questions").doc(questionId);
+          
+          try {
+            // Sélectionner une question
+            if (e.target.classList.contains('btn-select')) {
+              await questionRef.update({ status: 'selected' });
+              showToast("Question sélectionnée");
+              loadQuestions();
+            }
+            
+            // Marquer comme répondue
+            else if (e.target.classList.contains('btn-answer')) {
+              const videoLink = questionCard.querySelector('.video-link').value.trim();
+              
+              if (!videoLink) {
+                showToast("Veuillez entrer un lien vidéo", "error");
+                return;
+              }
+              
+              await questionRef.update({
+                status: 'answered',
+                videoLink: videoLink
+              });
+              
+              showToast("Réponse enregistrée");
+              loadQuestions();
+            }
+            
+          } catch (error) {
+            console.error("Erreur:", error);
+            showToast("Erreur de mise à jour", "error");
+          }
+        });
+
+        // 6. FONCTIONS UTILITAIRES
         function getCategoryName(categoryId) {
-            const categories = {
-                "vie-spirituelle": "Vie spirituelle",
-                "relations": "Relations & Amour",
-                "famille": "Famille",
-                "finances": "Finances",
-                "bible": "Bible & Doctrine",
-                "ministere": "Appel & Ministère",
-                "epreuves": "Doutes & Épreuves"
-            };
-            return categories[categoryId] || categoryId;
+          const categories = {
+            "vie-spirituelle": "Vie spirituelle",
+            "relations": "Relations",
+            "famille": "Famille",
+            "finances": "Finances",
+            "bible": "Bible",
+            "ministere": "Ministère",
+            "epreuves": "Épreuves"
+          };
+          return categories[categoryId] || categoryId;
         }
 
         function getStatusName(status) {
-            const statusNames = {
-                "new": "Nouvelle",
-                "selected": "Sélectionnée",
-                "answered": "Répondu"
-            };
-            return statusNames[status] || status;
+          return {
+            new: "Nouvelle",
+            selected: "Sélectionnée",
+            answered: "Répondu"
+          }[status] || status;
         }
 
         function formatDate(date) {
-            if (!date) return "";
-            return date.toLocaleDateString("fr-FR", {
-                day: "2-digit",
-                month: "2-digit",
-                year: "numeric",
-                hour: "2-digit",
-                minute: "2-digit"
-            });
+          if (!date) return "";
+          return date.toLocaleDateString('fr-FR', {
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+          });
         }
 
-        // Gestion des filtres
-        document.getElementById("filter-status").addEventListener("change", (e) => {
-            currentFilters.status = e.target.value;
-            loadQuestions();
-        });
-
-        document.getElementById("filter-category").addEventListener("change", (e) => {
-            currentFilters.category = e.target.value;
-            loadQuestions();
-        });
-
-        document.getElementById("search").addEventListener("input", (e) => {
-            currentFilters.search = e.target.value.trim();
-            // Délai pour éviter de trop nombreuses requêtes
-            clearTimeout(this.searchTimer);
-            this.searchTimer = setTimeout(() => {
-                loadQuestions();
-            }, 500);
-        });
-
-        // Gestion des actions admin
-        document.addEventListener("click", async (e) => {
-            if (!e.target.classList.contains("btn")) return;
-            
-            const questionCard = e.target.closest(".question-card");
-            if (!questionCard) return;
-            
-            const questionId = questionCard.dataset.id;
-            const questionRef = db.collection("questions").doc(questionId);
-            
-            try {
-                if (e.target.classList.contains("btn-warning")) {
-                    // Sélectionner la question
-                    await questionRef.update({ status: "selected" });
-                    showToast("Question sélectionnée avec succès");
-                } 
-                else if (e.target.classList.contains("btn-success")) {
-                    // Marquer comme répondue
-                    const videoLinkInput = questionCard.querySelector(".video-link-input");
-                    const videoLink = videoLinkInput.value.trim();
-                    
-                    if (!videoLink) {
-                        showToast("Veuillez entrer un lien vidéo", "error");
-                        return;
-                    }
-                    
-                    await questionRef.update({ 
-                        status: "answered",
-                        videoLink: videoLink
-                    });
-                    showToast("Question marquée comme répondue");
-                }
-                
-                loadQuestions(); // Recharger la liste
-            } catch (error) {
-                console.error("Error updating question: ", error);
-                showToast("Erreur lors de la mise à jour", "error");
-            }
-        });
-
-        // Déconnexion
-        document.getElementById("logout-btn").addEventListener("click", () => {
-            auth.signOut().then(() => {
-                window.location.href = "login.html";
-            });
-        });
-
-        // Fonction pour afficher des notifications
         function showToast(message, type = "success") {
-            const toast = document.createElement("div");
-            toast.className = `toast ${type === "error" ? "toast-error" : ""}`;
-            toast.textContent = message;
-            document.body.appendChild(toast);
-            
-            setTimeout(() => {
-                toast.style.animation = "fadeOut 0.3s";
-                setTimeout(() => {
-                    toast.remove();
-                }, 300);
-            }, 3000);
+          const toast = document.createElement('div');
+          toast.className = `toast ${type === "error" ? "toast-error" : ""}`;
+          toast.textContent = message;
+          document.body.appendChild(toast);
+          
+          setTimeout(() => toast.remove(), 3000);
         }
 
-        // Initialisation
-        document.addEventListener("DOMContentLoaded", () => {
-            checkAuth();
+        // 7. DÉCONNEXION
+        document.getElementById('logout-btn').addEventListener('click', () => {
+          auth.signOut().then(() => {
+            window.location.href = "login.html";
+          });
+        });
+
+        // 8. FILTRES
+        document.getElementById('filter-status').addEventListener('change', loadQuestions);
+        document.getElementById('filter-category').addEventListener('change', loadQuestions);
+        
+        let searchTimer;
+        document.getElementById('search').addEventListener('input', () => {
+          clearTimeout(searchTimer); // Utilisez la variable déclarée
+          searchTimer = setTimeout(loadQuestions, 500);
+        });
+
+        // 9. BOUTON 'DETAILS'
+        function setupDetailsButton(button, questionId, questionData) {
+          button.addEventListener('click', () => {
+            // Crée une modal avec les détails complets
+            const modal = document.createElement('div');
+            modal.className = 'question-modal';
             
-            // Définir les valeurs des filtres par défaut
-            document.getElementById("filter-status").value = currentFilters.status;
-            document.getElementById("filter-category").value = currentFilters.category;
+            modal.innerHTML = `
+              <div class="modal-content">
+                <h3>Détails de la question</h3>
+                
+                <div class="meta-section">
+                  <p><strong>Auteur :</strong> ${questionData.author || "Anonyme"}</p>
+                  <p><strong>Date :</strong> ${new Date(questionData.createdAt?.toDate()).toLocaleString('fr-FR')}</p>
+                  <p><strong>Catégorie :</strong> ${getCategoryName(questionData.category)}</p>
+                  <p><strong>Votes :</strong> ${questionData.votes || 0}</p>
+                </div>
+                
+                <div class="question-text-detail">
+                  ${formatQuestionText(questionData.text)}
+                </div>
+                
+                <div class="action-buttons">
+                  <button class="btn-edit">✏️ Modifier</button>
+                  <button class="btn-delete">🗑️ Supprimer</button>
+                  <button class="btn-close">Fermer</button>
+                </div>
+              </div>
+            `;
+
+            document.body.appendChild(modal);
+            
+            // Gestion des actions
+            modal.querySelector('.btn-close').addEventListener('click', () => modal.remove());
+            
+            modal.querySelector('.btn-edit').addEventListener('click', () => {
+              // Ouvrir un éditeur de texte
+              const newText = prompt("Modifier la question:", questionData.text);
+              if (newText && newText !== questionData.text) {
+                updateQuestion(questionId, { text: newText });
+              }
+            });
+            
+            modal.querySelector('.btn-delete').addEventListener('click', () => {
+              if (confirm("Supprimer définitivement cette question ?")) {
+                deleteQuestion(questionId);
+                modal.remove();
+              }
+            });
+          });
+        }
+
+        // Fonctions utilitaires
+        function formatQuestionText(text) {
+          return text.replace(/\n/g, '<br>')
+                    .replace(/https?:\/\/\S+/g, url => `<a href="${url}" target="_blank">${url}</a>`);
+        }
+
+        async function updateQuestion(id, updates) {
+          try {
+            await db.collection("questions").doc(id).update(updates);
+            showToast("Question mise à jour");
+            loadQuestions();
+          } catch (error) {
+            showToast("Erreur de mise à jour", "error");
+          }
+        }
+
+        async function deleteQuestion(id) {
+          try {
+            await db.collection("questions").doc(id).delete();
+            showToast("Question supprimée");
+            loadQuestions();
+          } catch (error) {
+            showToast("Erreur de suppression", "error");
+          }
+        }
+
+        // 10. INITIALISATION
+        document.addEventListener('DOMContentLoaded', initializeFirebase);
+
+
+        // Gestion des réponses multiples
+        let currentEditingQuestion = null;
+
+        // Ouvrir la modal de gestion
+        function openResponseModal(questionId) {
+          currentEditingQuestion = questionId;
+          const modal = document.getElementById('response-management-modal');
+          modal.classList.add('active');
+          loadResponses(questionId);
+        }
+
+        // Fermer la modal
+        function closeResponseModal() {
+          const modal = document.getElementById('response-management-modal');
+          modal.classList.remove('active');
+        }
+
+        // Charger les réponses
+        async function loadResponses(questionId) {
+          const docRef = doc(db, "questions", questionId);
+          const docSnap = await getDoc(docRef);
+          
+          if (docSnap.exists()) {
+            const responses = docSnap.data().responses || [];
+            renderResponseList(responses);
+          }
+        }
+
+        // Afficher la liste des réponses
+        function renderResponseList(responses) {
+          const container = document.getElementById('response-list');
+          container.innerHTML = responses.map((res, index) => `
+            <div class="response-item" data-index="${index}">
+              <div>
+                <strong>${res.title}</strong><br>
+                <a href="${res.videoUrl}" target="_blank">${res.videoUrl}</a>
+              </div>
+              <div class="response-actions">
+                <button class="btn btn-warning edit-response">✏️</button>
+                <button class="btn btn-danger delete-response">🗑️</button>
+              </div>
+            </div>
+          `).join('');
+        }
+
+        // Ajouter une réponse
+        async function addResponse() {
+          const title = document.getElementById('response-title').value;
+          const url = document.getElementById('response-url').value;
+          
+          if (!title || !url) {
+            alert("Veuillez remplir tous les champs");
+            return;
+          }
+
+          const questionRef = doc(db, "questions", currentEditingQuestion);
+          await updateDoc(questionRef, {
+            responses: arrayUnion({
+              videoUrl: url,
+              title: title,
+              createdAt: serverTimestamp()
+            }),
+            status: "answered"
+          });
+
+          // Recharger et réinitialiser
+          loadResponses(currentEditingQuestion);
+          document.getElementById('response-title').value = '';
+          document.getElementById('response-url').value = '';
+        }
+
+        // Supprimer une réponse
+        async function deleteResponse(index) {
+          const questionRef = doc(db, "questions", currentEditingQuestion);
+          const questionSnap = await getDoc(questionRef);
+          const responses = [...questionSnap.data().responses];
+          
+          responses.splice(index, 1);
+          
+          await updateDoc(questionRef, {
+            responses: responses
+          });
+          
+          loadResponses(currentEditingQuestion);
+        }
+
+        // Écouteurs d'événements
+        document.addEventListener('click', (e) => {
+          // Ouvrir la modal quand on clique sur "Détails"
+          if (e.target.classList.contains('btn-view')) {
+            const questionId = e.target.closest('.question-card').dataset.id;
+            openResponseModal(questionId);
+          }
+
+          // Fermer la modal
+          if (e.target.classList.contains('btn-close')) {
+            closeResponseModal();
+          }
+
+          // Ajouter une réponse
+          if (e.target.id === 'add-response-btn') {
+            addResponse();
+          }
+
+          // Supprimer une réponse
+          if (e.target.classList.contains('delete-response')) {
+            const index = e.target.closest('.response-item').dataset.index;
+            if (confirm("Supprimer cette réponse ?")) {
+              deleteResponse(index);
+            }
+          }
         });
     </script>
-</body>
+    <body>
+        <div class="admin-container">
+            <header>
+                <h1>Administration des questions</h1>
+                <button class="logout-btn" id="logout-btn">Déconnexion</button>
+            </header>
+            
+            <div class="filters">
+                <div class="filter-group">
+                    <label for="filter-status">Statut</label>
+                    <select id="filter-status">
+                        <option value="all">Toutes les questions</option>
+                        <option value="new">Nouvelles</option>
+                        <option value="selected">Sélectionnées</option>
+                        <option value="answered">Répondues</option>
+                    </select>
+                </div>
+                
+                <div class="filter-group">
+                    <label for="filter-category">Catégorie</label>
+                    <select id="filter-category">
+                        <option value="all">Toutes catégories</option>
+                        <option value="vie-spirituelle">Vie spirituelle</option>
+                        <option value="relations">Relations & Amour</option>
+                        <option value="famille">Famille</option>
+                        <option value="finances">Finances</option>
+                        <option value="bible">Bible & Doctrine</option>
+                        <option value="ministere">Appel & Ministère</option>
+                        <option value="epreuves">Doutes & Épreuves</option>
+                    </select>
+                </div>
+                
+                <div class="filter-group">
+                    <label for="search">Recherche</label>
+                    <input type="text" id="search" placeholder="Rechercher dans les questions...">
+                </div>
+            </div>
+            
+            <div class="questions-grid" id="questions-container">
+                <div id="response-management-modal" class="modal hidden">
+                  <div class="modal-content">
+                    <h3>Gestion des Réponses</h3>
+                    <div class="response-list" id="response-list">
+                      <!-- Les réponses s'afficheront ici -->
+                    </div>
+                    
+                    <div class="add-response">
+                      <h4>Ajouter une réponse</h4>
+                      <input type="text" id="response-title" placeholder="Titre (ex: Partie 1)">
+                      <input type="url" id="response-url" placeholder="URL YouTube/Vimeo">
+                      <button id="add-response-btn" class="btn btn-primary">Ajouter</button>
+                    </div>
+                    
+                    <button class="btn-close">Fermer</button>
+                  </div>
+                </div>
+                <div class="loading">Chargement des questions...</div>
+            </div>
+        </div>
+    </body>
 </html>

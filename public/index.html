@@ -156,6 +156,193 @@
         }
     </style>
 </head>
+<!-- Chargement des SDK Firebase -->
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+
+<script type="module">
+    // Import des fonctions nécessaires
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.0.0/firebase-app.js";
+    import { 
+      getFirestore, 
+      collection, 
+      query, 
+      orderBy, 
+      limit, 
+      getDocs,
+      addDoc,
+      doc,
+      updateDoc,
+      serverTimestamp,
+      increment
+    } from "https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore.js";
+
+    // Configuration Firebase
+    const firebaseConfig = {
+        apiKey: "AIzaSyBofrTS4e4P55w-68cmK2GlXW4usc9656o",
+        authDomain: "secondes-avec-pst-d.firebaseapp.com",
+        projectId: "secondes-avec-pst-d",
+        storageBucket: "secondes-avec-pst-d.appspot.com",
+        messagingSenderId: "502822204066",
+        appId: "1:502822204066:web:f170b15864e222f32f9dfb",
+        measurementId: "G-P1QY33FF40"
+    };
+
+    // Initialisation
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    // Référence à la collection
+    const questionsRef = collection(db, "questions");
+
+    // Gestion du formulaire
+    const form = document.getElementById('question-form');
+    form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        const questionData = {
+            author: document.getElementById('author').value || "Anonyme",
+            category: document.getElementById('category').value,
+            text: document.getElementById('question').value,
+            votes: 0,
+            status: "new",
+            createdAt: serverTimestamp()
+        };
+
+        try {
+            await addDoc(questionsRef, questionData);
+            document.getElementById('question-form').reset();
+            showToast("Question envoyée !");
+            loadQuestions();
+        } catch (error) {
+            console.error("Erreur:", error);
+            showToast("Erreur lors de l'envoi", "error");
+        }
+    });
+
+    // Chargement des questions
+    async function loadQuestions() {
+        const questionsList = document.getElementById('questions-list');
+        questionsList.innerHTML = '<div class="loading">Chargement...</div>';
+        
+        try {
+
+            const q = query(
+                collection(db, "questions"),
+                orderBy("createdAt", "desc"),
+                limit(10)
+            );
+
+            const querySnapshot = await getDocs(q);
+            questionsList.innerHTML = '';
+
+            if (querySnapshot.empty) {
+                questionsList.innerHTML = '<p>Aucune question pour le moment. Soyez le premier !</p>';
+                return;
+            }
+            
+            querySnapshot.forEach((doc) => {
+                const data = doc.data();
+                const questionElement = document.createElement('div');
+                questionElement.className = `question ${data.status === "answered" ? "answered" : ""}`;
+                questionElement.dataset.id = doc.id;
+                
+                questionElement.innerHTML = `
+                    <h3>${data.text}</h3>
+                    <div class="meta">
+                        Catégorie: ${getCategoryName(data.category)} • 
+                        Posée par: ${data.author || "Anonyme"} • 
+                        <span class="vote-count">${data.votes || 0}</span> votes
+                    </div>
+                    ${data.status === "answered" ? 
+                        data.responses && data.responses.length > 0 ?
+                            data.responses.map((res, i) => `
+                                <div class="response">
+                                    <a href="${res.videoUrl}" target="_blank">
+                                        Voir réponse ${i+1}: ${res.title || 'Sans titre'}
+                                    </a>
+                                </div>
+                            `).join('')
+                        : `<a href="${data.videoLink || "#"}" target="_blank" class="video-link">Voir la réponse</a>`
+                    : `<button class="vote-btn" data-id="${doc.id}">👍 Soutenir</button>`}
+                `;
+                
+                questionsList.appendChild(questionElement);
+            });
+        } catch (error) {
+            console.error("Erreur de chargement:", error);
+            questionsList.innerHTML = '<p>Erreur lors du chargement des questions</p>';
+        }
+    }
+
+    // Gestion des votes (délégation d'événements)
+    async function handleVote(questionId) {
+      try {
+        const questionRef = doc(db, "questions", questionId);
+        await updateDoc(questionRef, {
+          votes: increment(1)
+        });
+        console.log("Vote enregistré");
+        return true;
+      } catch (error) {
+        console.error("Erreur de vote:", error);
+        return false;
+      }
+    }
+
+    // Gestion du clic optimisée
+    document.addEventListener('click', async (e) => {
+      if (e.target.classList.contains('vote-btn')) {
+        const questionId = e.target.dataset.id;
+        const questionElement = e.target.closest('.question');
+        
+        // Mise à jour optimiste UI
+        const voteCountElement = questionElement.querySelector('.vote-count');
+        const originalCount = parseInt(voteCountElement.textContent);
+        voteCountElement.textContent = originalCount + 1;
+        e.target.disabled = true;
+        e.target.textContent = "👍 En cours...";
+        
+        // Envoi au serveur
+        const success = await handleVote(questionId);
+        
+        // Gestion du résultat
+        if (success) {
+          e.target.textContent = "👍 Merci !";
+        } else {
+          voteCountElement.textContent = originalCount; // Rollback
+          e.target.disabled = false;
+          e.target.textContent = "👍 Soutenir";
+          alert("Impossible d'enregistrer votre vote. Rechargez la page et réessayez.");
+        }
+      }
+    });
+
+    // Fonctions utilitaires
+    function getCategoryName(categoryId) {
+        const categories = {
+            "vie-spirituelle": "Vie spirituelle",
+            "relations": "Relations",
+            "famille": "Famille",
+            "finances": "Finances",
+            "bible": "Bible",
+            "ministere": "Ministère",
+            "epreuves": "Épreuves"
+        };
+        return categories[categoryId] || categoryId;
+    }
+
+    function showToast(message, type = "success") {
+        const toast = document.createElement('div');
+        toast.className = `toast ${type === "error" ? "toast-error" : ""}`;
+        toast.textContent = message;
+        document.body.appendChild(toast);
+        setTimeout(() => toast.remove(), 3000);
+    }
+
+    // Chargement initial
+    loadQuestions();
+</script>
 <body>
     <header>
         <h1>90 secondes avec Pasteur D</h1>
@@ -201,149 +388,5 @@
             </div>
         </div>
     </div>
-
-    <!-- Firebase SDK -->
-    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
-
-    <script>
-        // Configuration Firebase (à remplacer avec vos informations)
-        const firebaseConfig = {
-            apiKey: "AIzaSyBofrTS4e4P55w-68cmK2GlXW4usc9656o",
-            authDomain: "secondes-avec-pst-d.firebaseapp.com",
-            projectId: "secondes-avec-pst-d",
-            storageBucket: "secondes-avec-pst-d.firebasestorage.app",
-            messagingSenderId: "502822204066",
-            appId: "1:502822204066:web:f170b15864e222f32f9dfb",
-            measurementId: "G-P1QY33FF40"
-        };
-        
-        // Initialiser Firebase
-        const app = firebase.initializeApp(firebaseConfig);
-        const db = firebase.firestore();
-        const auth = firebase.auth();
-        const analytics = getAnalytics(app);
-
-        // Charger les questions depuis Firestore
-        function loadQuestions() {
-            db.collection("questions")
-                .orderBy("createdAt", "desc")
-                .limit(10)
-                .get()
-                .then((querySnapshot) => {
-                    const questionsList = document.getElementById("questions-list");
-                    questionsList.innerHTML = "";
-                    
-                    if (querySnapshot.empty) {
-                        questionsList.innerHTML = "<p>Aucune question pour le moment. Soyez le premier à poser une question !</p>";
-                        return;
-                    }
-                    
-                    querySnapshot.forEach((doc) => {
-                        const data = doc.data();
-                        const questionElement = document.createElement("div");
-                        questionElement.className = `question ${data.status === "answered" ? "answered" : ""}`;
-                        questionElement.dataset.id = doc.id;
-                        
-                        questionElement.innerHTML = `
-                            <h3>${data.text}</h3>
-                            <div class="meta">Catégorie: ${getCategoryName(data.category)} • 
-                                Posée par: ${data.author || "Anonyme"} • 
-                                ${data.votes || 0} vote${data.votes !== 1 ? "s" : ""}</div>
-                            ${data.status === "answered" ? 
-                                `<a href="${data.videoLink || "#"}" target="_blank" class="video-link">Voir la réponse en vidéo</a>` : 
-                                `<button class="vote-btn">👍 Soutenir cette question</button>`}
-                        `;
-                        
-                        questionsList.appendChild(questionElement);
-                    });
-                })
-                .catch((error) => {
-                    console.error("Error loading questions: ", error);
-                    showToast("Erreur lors du chargement des questions", "error");
-                });
-        }
-
-        // Helper pour les noms de catégories
-        function getCategoryName(categoryId) {
-            const categories = {
-                "vie-spirituelle": "Vie spirituelle",
-                "relations": "Relations & Amour",
-                "famille": "Famille",
-                "finances": "Finances",
-                "bible": "Bible & Doctrine",
-                "ministere": "Appel & Ministère",
-                "epreuves": "Doutes & Épreuves"
-            };
-            return categories[categoryId] || categoryId;
-        }
-
-        // Envoyer une nouvelle question
-        document.getElementById("question-form").addEventListener("submit", async (e) => {
-            e.preventDefault();
-            
-            const author = document.getElementById("author").value || "Anonyme";
-            const category = document.getElementById("category").value;
-            const questionText = document.getElementById("question").value;
-            
-            try {
-                await db.collection("questions").add({
-                    author: author,
-                    category: category,
-                    text: questionText,
-                    votes: 0,
-                    status: "new",
-                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
-                });
-                
-                document.getElementById("question-form").reset();
-                showToast("Merci pour votre question ! Pasteur D y répondra peut-être dans une prochaine vidéo.");
-                loadQuestions(); // Recharger la liste
-            } catch (error) {
-                console.error("Error adding question: ", error);
-                showToast("Une erreur s'est produite. Veuillez réessayer.", "error");
-            }
-        });
-
-        // Gérer les votes
-        document.addEventListener("click", async (e) => {
-            if (e.target.classList.contains("vote-btn")) {
-                const questionId = e.target.closest(".question").dataset.id;
-                
-                try {
-                    const questionRef = db.collection("questions").doc(questionId);
-                    await questionRef.update({
-                        votes: firebase.firestore.FieldValue.increment(1)
-                    });
-                    
-                    e.target.textContent = "👍 Merci pour votre vote !";
-                    e.target.disabled = true;
-                    loadQuestions(); // Recharger pour voir le nouveau nombre de votes
-                } catch (error) {
-                    console.error("Error updating vote: ", error);
-                    showToast("Erreur lors du vote", "error");
-                }
-            }
-        });
-
-        // Fonction pour afficher des notifications
-        function showToast(message, type = "success") {
-            const toast = document.createElement("div");
-            toast.className = `toast ${type === "error" ? "toast-error" : ""}`;
-            toast.textContent = message;
-            document.body.appendChild(toast);
-            
-            setTimeout(() => {
-                toast.style.animation = "fadeOut 0.3s";
-                setTimeout(() => {
-                    toast.remove();
-                }, 300);
-            }, 3000);
-        }
-
-        // Charger les questions au démarrage
-        document.addEventListener("DOMContentLoaded", loadQuestions);
-    </script>
 </body>
 </html>
