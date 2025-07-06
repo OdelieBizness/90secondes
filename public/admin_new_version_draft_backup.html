@@ -4,32 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin - 90 secondes avec Pasteur D</title>
-    <link rel="icon" type="image/x-icon" href="./images/icon-192x192.png">
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
-
-    <!-- Manifest -->
-    <link rel="manifest" href="/manifest.json">
-
-    <!-- iOS support -->
-    <link rel="apple-touch-icon" href="images/icon-192x192.png">
-    <meta name="apple-mobile-web-app-status-bar" content="#4a6fa5">
-    <meta name="theme-color" content="#4a6fa5">
-
-    <!-- Service Worker Registration -->
-    <script>
-      if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
-          navigator.serviceWorker.register('/sw.js')
-            .then(registration => {
-              console.log('ServiceWorker enregistré avec succès');
-            })
-            .catch(err => {
-              console.log('Échec de l\'enregistrement du ServiceWorker:', err);
-            });
-        });
-      }
-    </script>
-
     <style>
         :root {
             --primary: #4a6fa5;
@@ -39,9 +14,6 @@
             --success: #4CAF50;
             --warning: #FFC107;
             --danger: #F44336;
-        }
-        *, *:before, *:after {
-            box-sizing: border-box;
         }
         body {
             font-family: 'Roboto', sans-serif;
@@ -407,40 +379,34 @@
           font-style: italic;
         }
 
-        /* New */
-        .response-inputs {
-          display: flex;
-          flex-direction: column;
-          gap: 10px;
-          width: 100%;
-          margin-bottom: 10px;
+        /* Loading */
+        .loading {
+          padding: 10px;
+          color: #666;
+          font-style: italic;
+          text-align: center;
+          animation: pulse 1.5s infinite;
         }
 
-        .response-input-group {
-          display: flex;
-          gap: 10px;
+        @keyframes pulse {
+          0% { opacity: 0.6; }
+          50% { opacity: 1; }
+          100% { opacity: 0.6; }
         }
 
-        .response-input-group input {
-          flex: 1;
+        .no-responses {
+          padding: 20px;
+          text-align: center;
+          color: #666;
+          font-style: italic;
         }
 
-        .responses {
-          display: flex;
-          flex-direction: column;
-          gap: 8px;
-          margin-top: 10px;
-        }
-
-        .response {
-          display: flex;
-          align-items: center;
-          gap: 10px;
-        }
-
-        .btn-edit-response, .btn-edit-link, .btn-reopen, .btn-unselect {
-          padding: 8px 12px;
-          font-size: 0.85rem;
+        .response-item {
+          background: #f9f9f9;
+          padding: 12px;
+          margin-bottom: 8px;
+          border-radius: 4px;
+          transition: all 0.3s ease;
         }
     </style>
 </head>
@@ -449,6 +415,67 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
 
+    
+    <body>
+        <div class="admin-container">
+            <header>
+                <h1>Administration des questions</h1>
+                <button class="logout-btn" id="logout-btn">Déconnexion</button>
+            </header>
+            
+            <div class="filters">
+                <div class="filter-group">
+                    <label for="filter-status">Statut</label>
+                    <select id="filter-status">
+                        <option value="all">Toutes les questions</option>
+                        <option value="new">Nouvelles</option>
+                        <option value="selected">Sélectionnées</option>
+                        <option value="answered">Répondues</option>
+                    </select>
+                </div>
+                
+                <div class="filter-group">
+                    <label for="filter-category">Catégorie</label>
+                    <select id="filter-category">
+                        <option value="all">Toutes catégories</option>
+                        <option value="vie-spirituelle">Vie spirituelle</option>
+                        <option value="relations">Relations & Amour</option>
+                        <option value="famille">Famille</option>
+                        <option value="finances">Finances</option>
+                        <option value="bible">Bible & Doctrine</option>
+                        <option value="ministere">Appel & Ministère</option>
+                        <option value="epreuves">Doutes & Épreuves</option>
+                    </select>
+                </div>
+                
+                <div class="filter-group">
+                    <label for="search">Recherche</label>
+                    <input type="text" id="search" placeholder="Rechercher dans les questions...">
+                </div>
+            </div>
+            
+            <div class="questions-grid" id="questions-container">
+                <div class="loading">Chargement des questions...</div>
+            </div>
+            <div id="response-management-modal" class="modal ">
+              <div class="modal-content">
+                <h3>Gestion des Réponses</h3>
+                <div class="response-list" id="response-list">
+                  <!-- Les réponses s'afficheront ici -->
+                </div>
+                
+                <div class="add-response">
+                  <h4>Ajouter une réponse</h4>
+                  <input type="text" id="response-title" placeholder="Titre (ex: Partie 1)">
+                  <input type="url" id="response-url" placeholder="URL YouTube/Vimeo">
+                  <button id="add-response-btn" class="btn btn-primary">Ajouter</button>
+                </div>
+                
+                <button class="btn-close">Fermer</button>
+              </div>
+            </div>
+        </div>
+    </body>
     <script type="module">
         // Import the functions you need from the SDKs you need
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-app.js";
@@ -602,87 +629,30 @@
                 ` : ''}
                 
                 ${data.status === 'selected' ? `
-                  <div class="response-inputs">
-                    ${(data.responses || []).map((res, i) => `
-                      <div class="response-input-group">
-                        <input type="text" class="response-title" placeholder="Titre partie ${i+1}" value="${res.title || ''}">
-                        <input type="text" class="video-link" placeholder="Lien YouTube..." value="${res.videoUrl || ''}">
-                      </div>
-                    `).join('')}
-                    <div class="response-input-group">
-                      <input type="text" class="response-title" placeholder="Nouveau titre">
-                      <input type="text" class="video-link" placeholder="Nouveau lien YouTube...">
-                    </div>
-                  </div>
-                  <button class="btn btn-success btn-answer">Enregistrer les réponses</button>
-                  <button class="btn btn-warning btn-unselect">Désélectionner</button>
+                  <input type="text" class="video-link" placeholder="Lien YouTube..." value="${data.videoLink || ''}">
+                  <button class="btn btn-success btn-answer">Marquer comme répondue</button>
                 ` : ''}
                 
-                ${data.status === 'answered' ? `
-                  <div class="responses">
-                    ${(data.responses || []).map((res, i) => `
-                      <div class="response">
-                        <a href="${res.videoUrl}" target="_blank" class="btn btn-primary">
-                          Voir partie ${i + 1}: ${res.title}
-                        </a>
-                        <button class="btn btn-warning btn-edit-response" data-index="${i}">Modifier</button>
+                ${data.status === 'answered' 
+                  ? data.responses?.length > 0
+                    ? `
+                      <div class="responses">
+                        ${data.responses.map((res, i) => `
+                          <div class="response">
+                            <a href="${res.videoUrl}" target="_blank" class="btn btn-primary">
+                              Voir partie ${i + 1}: ${res.title}
+                            </a>
+                          </div>
+                        `).join('')}
                       </div>
-                    `).join('')}
-                    ${data.videoLink ? `
-                      <a href="${data.videoLink}" target="_blank" class="btn btn-primary">Voir la réponse</a>
-                      <button class="btn btn-warning btn-edit-link">Modifier le lien</button>
-                    ` : ''}
-                  </div>
-                  <button class="btn btn-warning btn-reopen">Rouvrir la question</button>
-                ` : ''}
+                    `
+                    : data.videoLink
+                      ? `<a href="${data.videoLink}" target="_blank" class="btn btn-primary">Voir la réponse</a>`
+                      : '<span class="no-response">Réponse en préparation</span>'
+                  : ''
+                }
               </div>
             `;
-
-          // questionElement.innerHTML = `
-          //     <div class="question-header">
-          //       <span class="question-category">${getCategoryName(data.category)}</span>
-          //       <span class="status-badge status-${data.status}">${getStatusName(data.status)}</span>
-          //     </div>
-          //     <div class="question-text">${data.text}</div>
-          //     <div class="question-meta">
-          //       <strong>${data.author || "Anonyme"}</strong> • 
-          //       ${formatDate(data.createdAt?.toDate())} • 
-          //       ${data.votes || 0} votes
-          //     </div>
-          //     <div class="question-actions">
-          //       ${data.status !== 'answered' ? `
-          //         <button class="btn btn-primary btn-view">Détails</button>
-          //       ` : ''}
-                
-          //       ${data.status === 'new' ? `
-          //         <button class="btn btn-warning btn-select">Sélectionner</button>
-          //       ` : ''}
-                
-          //       ${data.status === 'selected' ? `
-          //         <input type="text" class="video-link" placeholder="Lien YouTube..." value="${data.videoLink || ''}">
-          //         <button class="btn btn-success btn-answer">Marquer comme répondue</button>
-          //       ` : ''}
-                
-          //       ${data.status === 'answered' 
-          //         ? data.responses?.length > 0
-          //           ? `
-          //             <div class="responses">
-          //               ${data.responses.map((res, i) => `
-          //                 <div class="response">
-          //                   <a href="${res.videoUrl}" target="_blank" class="btn btn-primary">
-          //                     Voir partie ${i + 1}: ${res.title}
-          //                   </a>
-          //                 </div>
-          //               `).join('')}
-          //             </div>
-          //           `
-          //           : data.videoLink
-          //             ? `<a href="${data.videoLink}" target="_blank" class="btn btn-primary">Voir la réponse</a>`
-          //             : '<span class="no-response">Réponse en préparation</span>'
-          //         : ''
-          //       }
-          //     </div>
-          //   `;
           
           container.appendChild(questionElement);
 
@@ -710,112 +680,22 @@
               showToast("Question sélectionnée");
               loadQuestions();
             }
-
-            // Désélectionner une question
-            if (e.target.classList.contains('btn-unselect')) {
-              await questionRef.update({ status: 'new', responses: [] });
-              showToast("Question désélectionnée");
-              loadQuestions();
-            }
             
             // Marquer comme répondue
-            // else if (e.target.classList.contains('btn-answer')) {
-            //   const videoLink = questionCard.querySelector('.video-link').value.trim();
-              
-            //   if (!videoLink) {
-            //     showToast("Veuillez entrer un lien vidéo", "error");
-            //     return;
-            //   }
-              
-            //   await questionRef.update({
-            //     status: 'answered',
-            //     videoLink: videoLink
-            //   });
-              
-            //   showToast("Réponse enregistrée");
-            //   loadQuestions();
-            // }
-
-            // Enregistrer plusieurs réponses
             else if (e.target.classList.contains('btn-answer')) {
-              const responseGroups = questionCard.querySelectorAll('.response-input-group');
-              const responses = [];
+              const videoLink = questionCard.querySelector('.video-link').value.trim();
               
-              responseGroups.forEach(group => {
-                const titleInput = group.querySelector('.response-title');
-                const linkInput = group.querySelector('.video-link');
-                
-                if (titleInput.value && linkInput.value) {
-                  responses.push({
-                    title: titleInput.value,
-                    videoUrl: linkInput.value
-                  });
-                }
-              });
-              
-              if (responses.length === 0) {
-                showToast("Veuillez entrer au moins une réponse valide", "error");
+              if (!videoLink) {
+                showToast("Veuillez entrer un lien vidéo", "error");
                 return;
               }
               
               await questionRef.update({
                 status: 'answered',
-                responses: responses,
-                videoLink: null // On efface l'ancien lien unique
+                videoLink: videoLink
               });
               
-              showToast("Réponses enregistrées");
-              loadQuestions();
-            }
-            
-            // Modifier un lien existant
-            else if (e.target.classList.contains('btn-edit-link')) {
-              const newLink = prompt("Modifier le lien vidéo:", data.videoLink);
-              if (newLink && newLink !== data.videoLink) {
-                await questionRef.update({ videoLink: newLink });
-                showToast("Lien mis à jour");
-                loadQuestions();
-              }
-            }
-            
-            // Modifier une réponse existante
-            else if (e.target.classList.contains('btn-edit-response')) {
-              const index = e.target.dataset.index;
-              const questionId = questionCard.dataset.id;
-              
-              // Récupérer les données actuelles de Firestore
-              const questionDoc = await db.collection("questions").doc(questionId).get();
-              if (!questionDoc.exists) return;
-              
-              const questionData = questionDoc.data();
-              const responses = questionData.responses || [];
-              
-              if (index >= responses.length) return;
-              
-              const response = responses[index];
-              
-              const newTitle = prompt("Modifier le titre:", response.title);
-              const newUrl = prompt("Modifier l'URL:", response.videoUrl);
-              
-              if (newTitle !== null && newUrl !== null) {
-                const updatedResponses = [...responses];
-                updatedResponses[index] = {
-                  title: newTitle,
-                  videoUrl: newUrl
-                };
-                
-                await db.collection("questions").doc(questionId).update({ 
-                  responses: updatedResponses 
-                });
-                showToast("Réponse mise à jour");
-                loadQuestions();
-              }
-            }
-            
-            // Rouvrir une question
-            else if (e.target.classList.contains('btn-reopen')) {
-              await questionRef.update({ status: 'new' });
-              showToast("Question rouverte");
+              showToast("Réponse enregistrée");
               loadQuestions();
             }
             
@@ -886,6 +766,13 @@
 
         // 9. BOUTON 'DETAILS'
         function setupDetailsButton(button, questionId, questionData) {
+          button.addEventListener('click', () => {
+            openResponseModal(questionId); // Utilise la modal existante
+            // Au lieu de créer une nouvelle modal
+          });
+        }
+
+        function _setupDetailsButton(button, questionId, questionData) {
           button.addEventListener('click', () => {
             // Crée une modal avec les détails complets
             const modal = document.createElement('div');
@@ -970,11 +857,37 @@
         let currentEditingQuestion = null;
 
         // Ouvrir la modal de gestion
-        function openResponseModal(questionId) {
+        function _openResponseModal(questionId) {
           currentEditingQuestion = questionId;
           const modal = document.getElementById('response-management-modal');
           modal.classList.add('active');
           loadResponses(questionId);
+        }
+
+        async function openResponseModal(questionId) {
+            try {
+                currentEditingQuestion = questionId;
+                const modal = document.getElementById('response-management-modal');
+                modal.classList.add('active');
+                
+                const doc = await db.collection("questions").doc(questionId).get();
+                const data = doc.data();
+                
+                // Garantir que responses existe
+                if (!data.responses) {
+                    await db.collection("questions").doc(questionId).update({
+                        responses: []
+                    });
+                }
+                
+                renderResponseList(data.responses || []);
+                
+            } catch (error) {
+                console.error("Erreur:", error);
+                document.getElementById('response-list').innerHTML = `
+                    <div class="error">Erreur de chargement</div>
+                `;
+            }
         }
 
         // Fermer la modal
@@ -985,67 +898,230 @@
 
         // Charger les réponses
         async function loadResponses(questionId) {
-          const docRef = doc(db, "questions", questionId);
-          const docSnap = await getDoc(docRef);
-          
-          if (docSnap.exists()) {
-            const responses = docSnap.data().responses || [];
-            renderResponseList(responses);
+          try {
+            const container = document.getElementById('response-list');
+            if (!container) {
+              console.error("Element 'response-list' introuvable");
+              return;
+            }
+
+            const doc = await db.collection("questions").doc(questionId).get();
+            
+            if (!doc.exists) {
+              container.innerHTML = '<div class="error">Question introuvable</div>';
+              return;
+            }
+
+            const data = doc.data();
+            if (!data.responses || !Array.isArray(data.responses)) {
+              container.innerHTML = '<div class="error">Format de données invalide</div>';
+              return;
+            }
+
+            renderResponseList(data.responses);
+
+          } catch (error) {
+            console.error("Erreur de chargement:", error);
+            document.getElementById('response-list').innerHTML = `
+              <div class="error">Erreur: ${error.message}</div>
+            `;
           }
         }
 
         // Afficher la liste des réponses
         function renderResponseList(responses) {
           const container = document.getElementById('response-list');
-          container.innerHTML = responses.map((res, index) => `
-            <div class="response-item" data-index="${index}">
-              <div>
-                <strong>${res.title}</strong><br>
-                <a href="${res.videoUrl}" target="_blank">${res.videoUrl}</a>
-              </div>
-              <div class="response-actions">
-                <button class="btn btn-warning edit-response">✏️</button>
-                <button class="btn btn-danger delete-response">🗑️</button>
-              </div>
-            </div>
-          `).join('');
+          if (!container || !Array.isArray(responses)) {
+            console.error("Container ou données invalides");
+            return;
+          }
+
+          container.innerHTML = responses.length > 0
+            ? responses.map((res, index) => `
+                <div class="response-item" data-index="${index}">
+                  <div>
+                    <strong>${res.title || 'Sans titre'}</strong><br>
+                    <a href="${res.videoUrl || '#'}" target="_blank">
+                      ${res.videoUrl || 'Aucune URL'}
+                    </a>
+                    ${res.updatedAt ? `<br><small>${formatDate(
+                      res.updatedAt instanceof firebase.firestore.Timestamp 
+                        ? res.updatedAt.toDate() 
+                        : new Date(res.updatedAt)
+                    )}</small>` : ''}
+                  </div>
+                  <div class="response-actions">
+                    <button class="btn btn-warning edit-response">✏️</button>
+                    <button class="btn btn-danger delete-response">🗑️</button>
+                  </div>
+                </div>
+              `).join('')
+            : '<div class="no-responses">Aucune réponse disponible</div>';
         }
 
         // Ajouter une réponse
         async function addResponse() {
-          const title = document.getElementById('response-title').value;
-          const url = document.getElementById('response-url').value;
+            try {
+                const title = document.getElementById('response-title').value;
+                const url = document.getElementById('response-url').value;
+                
+                if (!title || !url) {
+                    showToast("Veuillez remplir tous les champs", "error");
+                    return;
+                }
+
+                const questionRef = db.collection("questions").doc(currentEditingQuestion);
+                
+                // Opération atomique avec merge
+                await questionRef.set({
+                    responses: arrayUnion({
+                        title: title,
+                        videoUrl: url,
+                        createdAt: serverTimestamp()
+                    }),
+                    status: "answered"
+                }, { merge: true });
+
+                // Mise à jour optimiste
+                const responseList = document.getElementById('response-list');
+                const newResponse = document.createElement('div');
+                newResponse.className = 'response-item';
+                newResponse.innerHTML = `
+                    <div>
+                        <strong>${title}</strong><br>
+                        <a href="${url}" target="_blank">${url}</a>
+                    </div>
+                `;
+                responseList.appendChild(newResponse);
+
+                // Réinitialisation
+                document.getElementById('response-title').value = '';
+                document.getElementById('response-url').value = '';
+                
+            } catch (error) {
+                console.error("Erreur:", error);
+                showToast("Échec de l'ajout", "error");
+            }
+        }
+
+        // Nouvelle fonction pour wrapper les updates complexes
+        async function safeArrayUpdate(questionId, updateCallback) {
+          const questionRef = db.collection("questions").doc(questionId);
+          const doc = await questionRef.get();
+          let responses = [...doc.data().responses];
           
-          if (!title || !url) {
-            alert("Veuillez remplir tous les champs");
-            return;
+          // Permet de modifier le tableau localement
+          responses = await updateCallback(responses);
+          
+          // Nettoie les FieldValue non supportés
+          const cleanResponses = responses.map(r => ({
+            ...r,
+            updatedAt: r.updatedAt instanceof firebase.firestore.FieldValue 
+              ? new Date() 
+              : r.updatedAt
+          }));
+          
+          // Envoi initial
+          await questionRef.update({ responses: cleanResponses });
+          
+          // Mise à jour des timestamps serveur
+          const serverUpdates = responses.map((r, i) => 
+            r.updatedAt instanceof firebase.firestore.FieldValue
+              ? { [`responses.${i}.updatedAt`]: r.updatedAt }
+              : null
+          ).filter(Boolean);
+          
+          if (serverUpdates.length > 0) {
+            await questionRef.update(Object.assign({}, ...serverUpdates));
           }
+        }
 
-          const questionRef = doc(db, "questions", currentEditingQuestion);
-          await updateDoc(questionRef, {
-            responses: arrayUnion({
-              videoUrl: url,
-              title: title,
-              createdAt: serverTimestamp()
-            }),
-            status: "answered"
-          });
+        async function migrateExistingQuestions() {
+    const querySnapshot = await getDocs(collection(db, "questions"));
+    const batch = writeBatch(db);
+    
+    querySnapshot.forEach((doc) => {
+        if (!doc.data().responses) {
+            batch.update(doc.ref, { responses: [] });
+        }
+    });
+    
+    await batch.commit();
+    console.log("Migration terminée");
+}
 
-          // Recharger et réinitialiser
-          loadResponses(currentEditingQuestion);
-          document.getElementById('response-title').value = '';
-          document.getElementById('response-url').value = '';
+
+        //Modifier une reponse
+        async function editResponse(index) {
+          try {
+            // 1. Afficher un indicateur de chargement
+            const responseList = document.getElementById('response-list');
+            responseList.innerHTML = '<div class="loading">Enregistrement...</div>';
+
+            // 2. Récupérer les données actuelles COMPLÈTES
+            const questionRef = db.collection("questions").doc(currentEditingQuestion);
+            const doc = await questionRef.get();
+            const completeData = doc.data();
+            const currentResponses = [...completeData.responses];
+
+            // 3. Demander les modifications
+            const responseToEdit = currentResponses[index];
+            const newTitle = prompt("Nouveau titre:", responseToEdit.title);
+            if (newTitle === null) {
+              renderResponseList(currentResponses); // Annulation
+              return;
+            }
+
+            const newUrl = prompt("Nouvelle URL:", responseToEdit.videoUrl);
+            if (newUrl === null) {
+              renderResponseList(currentResponses); // Annulation
+              return;
+            }
+
+            // 4. Créer une COPIE complète des réponses avec modification
+            const updatedResponses = currentResponses.map((item, i) => 
+              i === index ? { 
+                ...item, // Conserve TOUTES les propriétés existantes
+                title: newTitle,
+                videoUrl: newUrl,
+                updatedAt: new Date() // Temporaire (remplacé ensuite par serverTimestamp)
+              } : item
+            );
+
+            // 5. Mise à jour IMMÉDIATE de l'UI
+            renderResponseList(updatedResponses);
+
+            // 6. Mise à jour Firestore en 2 étapes SAFE
+            // Étape 1: Mettre à jour les champs simples
+            await questionRef.update({
+              [`responses.${index}.title`]: newTitle,
+              [`responses.${index}.videoUrl`]: newUrl
+            });
+
+            // Étape 2: Mettre à jour le timestamp séparément
+            await questionRef.update({
+              [`responses.${index}.updatedAt`]: firebase.firestore.FieldValue.serverTimestamp()
+            });
+
+            showToast("Modification enregistrée");
+
+          } catch (error) {
+            console.error("Erreur:", error);
+            showToast("Échec de la modification", "error");
+            // Restaurer les données originales
+            loadResponses(currentEditingQuestion);
+          }
         }
 
         // Supprimer une réponse
         async function deleteResponse(index) {
-          const questionRef = doc(db, "questions", currentEditingQuestion);
-          const questionSnap = await getDoc(questionRef);
+          const questionRef = db.collection("questions").doc(currentEditingQuestion);
+          const questionSnap = await questionRef.get();
           const responses = [...questionSnap.data().responses];
           
           responses.splice(index, 1);
           
-          await updateDoc(questionRef, {
+          await questionRef.update({
             responses: responses
           });
           
@@ -1070,6 +1146,12 @@
             addResponse();
           }
 
+          // [AJOUTEZ ICI LE NOUVEAU GESTIONNAIRE POUR L'ÉDITION]
+          if (e.target.classList.contains('edit-response')) {
+            const index = parseInt(e.target.closest('.response-item').dataset.index);
+            editResponse(index);
+          }
+
           // Supprimer une réponse
           if (e.target.classList.contains('delete-response')) {
             const index = e.target.closest('.response-item').dataset.index;
@@ -1079,64 +1161,4 @@
           }
         });
     </script>
-    <body>
-        <div class="admin-container">
-            <header>
-                <h1>Administration des questions</h1>
-                <button class="logout-btn" id="logout-btn">Déconnexion</button>
-            </header>
-            
-            <div class="filters">
-                <div class="filter-group">
-                    <label for="filter-status">Statut</label>
-                    <select id="filter-status">
-                        <option value="all">Toutes les questions</option>
-                        <option value="new">Nouvelles</option>
-                        <option value="selected">Sélectionnées</option>
-                        <option value="answered">Répondues</option>
-                    </select>
-                </div>
-                
-                <div class="filter-group">
-                    <label for="filter-category">Catégorie</label>
-                    <select id="filter-category">
-                        <option value="all">Toutes catégories</option>
-                        <option value="vie-spirituelle">Vie spirituelle</option>
-                        <option value="relations">Relations & Amour</option>
-                        <option value="famille">Famille</option>
-                        <option value="finances">Finances</option>
-                        <option value="bible">Bible & Doctrine</option>
-                        <option value="ministere">Appel & Ministère</option>
-                        <option value="epreuves">Doutes & Épreuves</option>
-                    </select>
-                </div>
-                
-                <div class="filter-group">
-                    <label for="search">Recherche</label>
-                    <input type="text" id="search" placeholder="Rechercher dans les questions...">
-                </div>
-            </div>
-            
-            <div class="questions-grid" id="questions-container">
-                <div id="response-management-modal" class="modal hidden">
-                  <div class="modal-content">
-                    <h3>Gestion des Réponses</h3>
-                    <div class="response-list" id="response-list">
-                      <!-- Les réponses s'afficheront ici -->
-                    </div>
-                    
-                    <div class="add-response">
-                      <h4>Ajouter une réponse</h4>
-                      <input type="text" id="response-title" placeholder="Titre (ex: Partie 1)">
-                      <input type="url" id="response-url" placeholder="URL YouTube/Vimeo">
-                      <button id="add-response-btn" class="btn btn-primary">Ajouter</button>
-                    </div>
-                    
-                    <button class="btn-close">Fermer</button>
-                  </div>
-                </div>
-                <div class="loading">Chargement des questions...</div>
-            </div>
-        </div>
-    </body>
 </html>
