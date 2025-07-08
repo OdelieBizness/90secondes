@@ -442,6 +442,20 @@
           padding: 8px 12px;
           font-size: 0.85rem;
         }
+
+        /* Pagination */
+        .pagination button {
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            background: var(--secondary);
+            border-radius: 4px;
+            cursor: pointer;
+            color: white;
+        }
+
+        .pagination button:hover {
+            background: #f0f0f0;
+        }
     </style>
 </head>
 <!-- Firebase SDK -->
@@ -487,14 +501,39 @@
           });
         }
 
+        async function sendPushNotification(questionId, questionText) {
+          // 1. Récupérer tous les tokens d'abonnement depuis Firestore
+          const subscriptions = await db.collection('subscriptions').get();
+          
+          // 2. Envoyer à chaque abonné (simplifié avec fetch)
+          subscriptions.forEach(async (sub) => {
+            const response = await fetch('https://votre-backend.com/send-notification', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                subscription: sub.data(),
+                payload: {
+                  title: "Nouvelle réponse disponible",
+                  body: questionText.slice(0, 50) + '...',
+                  data: { questionId }
+                }
+              })
+            });
+            console.log(await response.json());
+          });
+        }
+
         // 3. CHARGEMENT DES QUESTIONS
         let isLoading = false;
+        // Variables globales pour la pagination
+        let currentPage = 1;
+        const questionsPerPage = 10;
 
         async function loadQuestions() {
           if (isLoading) return;
 
           const container = document.getElementById('questions-container');
-          showLoading(container); // Affiche le spinner
+          showLoading(container);
           
           isLoading = true;
 
@@ -505,7 +544,6 @@
 
             let query = db.collection("questions");
 
-            // Appliquez UN SEUL filtre côté serveur à la fois
             if (statusFilter !== "all" && categoryFilter === "all") {
               query = query.where("status", "==", statusFilter)
                          .orderBy("createdAt", "desc");
@@ -515,16 +553,14 @@
                          .orderBy("createdAt", "desc");
             }
             else {
-              // Si les deux filtres sont actifs OU recherche texte, filtrez côté client
               query = query.orderBy("createdAt", "desc");
             }
 
             const snapshot = await query.get();
-            const container = document.getElementById('questions-container');
             container.innerHTML = '';
 
             // Filtrage côté client
-            const filteredDocs = [];
+            const allQuestions = [];
             snapshot.forEach(doc => {
               const data = doc.data();
               const matchesStatus = statusFilter === "all" || data.status === statusFilter;
@@ -532,26 +568,84 @@
               const matchesSearch = !searchText || data.text.toLowerCase().includes(searchText);
 
               if (matchesStatus && matchesCategory && matchesSearch) {
-                filteredDocs.push({ id: doc.id, ...data });
+                allQuestions.push({ id: doc.id, ...data });
               }
             });
 
-            if (filteredDocs.length === 0) {
+            if (allQuestions.length === 0) {
               container.innerHTML = `<div class="empty-state">Aucune question trouvée</div>`;
               return;
             }
 
-            // Tri par date (si non déjà fait côté serveur)
-            filteredDocs.sort((a, b) => b.createdAt - a.createdAt);
+            // Pagination
+            const startIndex = (currentPage - 1) * questionsPerPage;
+            const endIndex = startIndex + questionsPerPage;
+            const paginatedQuestions = allQuestions.slice(startIndex, endIndex);
 
             // Affichage
-            filteredDocs.forEach(item => renderQuestion(item.id, item));
+            paginatedQuestions.forEach(item => renderQuestion(item.id, item));
+
+            // Ajout de la pagination
+            renderPagination(allQuestions.length);
 
           } catch (error) {
             showError(container, error);
           } finally {
             isLoading = false;
           }
+        }
+
+        function renderPagination(totalQuestions) {
+            const totalPages = Math.ceil(totalQuestions / questionsPerPage);
+            if (totalPages <= 1) return;
+
+            const pagination = document.createElement('div');
+            pagination.className = 'pagination';
+            pagination.style.marginTop = '20px';
+            pagination.style.display = 'flex';
+            pagination.style.justifyContent = 'center';
+            pagination.style.gap = '10px';
+
+            // Bouton Précédent
+            if (currentPage > 1) {
+                const prevBtn = document.createElement('button');
+                prevBtn.textContent = '← Précédent';
+                prevBtn.onclick = () => {
+                    currentPage--;
+                    loadQuestions();
+                };
+                pagination.appendChild(prevBtn);
+            }
+
+            // Pages
+            for (let i = 1; i <= totalPages; i++) {
+                const pageBtn = document.createElement('button');
+                pageBtn.textContent = i;
+                if (i === currentPage) {
+                    pageBtn.style.fontWeight = 'bold';
+                    pageBtn.style.backgroundColor = '#4a6fa5';
+                    pageBtn.style.color = 'white';
+                }
+                pageBtn.onclick = () => {
+                    currentPage = i;
+                    loadQuestions();
+                };
+                pagination.appendChild(pageBtn);
+            }
+
+            // Bouton Suivant
+            if (currentPage < totalPages) {
+                const nextBtn = document.createElement('button');
+                nextBtn.textContent = 'Suivant →';
+                nextBtn.onclick = () => {
+                    currentPage++;
+                    loadQuestions();
+                };
+                pagination.appendChild(nextBtn);
+            }
+
+            const container = document.getElementById('questions-container');
+            container.appendChild(pagination);
         }
 
         // Fonctions utilitaires
@@ -638,52 +732,6 @@
               </div>
             `;
 
-          // questionElement.innerHTML = `
-          //     <div class="question-header">
-          //       <span class="question-category">${getCategoryName(data.category)}</span>
-          //       <span class="status-badge status-${data.status}">${getStatusName(data.status)}</span>
-          //     </div>
-          //     <div class="question-text">${data.text}</div>
-          //     <div class="question-meta">
-          //       <strong>${data.author || "Anonyme"}</strong> • 
-          //       ${formatDate(data.createdAt?.toDate())} • 
-          //       ${data.votes || 0} votes
-          //     </div>
-          //     <div class="question-actions">
-          //       ${data.status !== 'answered' ? `
-          //         <button class="btn btn-primary btn-view">Détails</button>
-          //       ` : ''}
-                
-          //       ${data.status === 'new' ? `
-          //         <button class="btn btn-warning btn-select">Sélectionner</button>
-          //       ` : ''}
-                
-          //       ${data.status === 'selected' ? `
-          //         <input type="text" class="video-link" placeholder="Lien YouTube..." value="${data.videoLink || ''}">
-          //         <button class="btn btn-success btn-answer">Marquer comme répondue</button>
-          //       ` : ''}
-                
-          //       ${data.status === 'answered' 
-          //         ? data.responses?.length > 0
-          //           ? `
-          //             <div class="responses">
-          //               ${data.responses.map((res, i) => `
-          //                 <div class="response">
-          //                   <a href="${res.videoUrl}" target="_blank" class="btn btn-primary">
-          //                     Voir partie ${i + 1}: ${res.title}
-          //                   </a>
-          //                 </div>
-          //               `).join('')}
-          //             </div>
-          //           `
-          //           : data.videoLink
-          //             ? `<a href="${data.videoLink}" target="_blank" class="btn btn-primary">Voir la réponse</a>`
-          //             : '<span class="no-response">Réponse en préparation</span>'
-          //         : ''
-          //       }
-          //     </div>
-          //   `;
-          
           container.appendChild(questionElement);
 
           // bouton Détails :
@@ -763,6 +811,14 @@
                 responses: responses,
                 videoLink: null // On efface l'ancien lien unique
               });
+
+              await db.collection("questions").doc(questionId).update({
+              status: 'answered',
+              responses: responses,
+              videoLink: null,
+              answeredAt: firebase.firestore.FieldValue.serverTimestamp()
+              });
+              sendPushNotification(questionId, questionText);
               
               showToast("Réponses enregistrées");
               loadQuestions();
@@ -875,13 +931,20 @@
         });
 
         // 8. FILTRES
-        document.getElementById('filter-status').addEventListener('change', loadQuestions);
-        document.getElementById('filter-category').addEventListener('change', loadQuestions);
-        
+        document.getElementById('filter-status').addEventListener('change', () => {
+            currentPage = 1; // Réinitialiser à la première page
+            loadQuestions();
+        });
+        document.getElementById('filter-category').addEventListener('change', () => {
+            currentPage = 1; // Réinitialiser à la première page
+            loadQuestions();
+        });
+
         let searchTimer;
         document.getElementById('search').addEventListener('input', () => {
-          clearTimeout(searchTimer); // Utilisez la variable déclarée
-          searchTimer = setTimeout(loadQuestions, 500);
+            currentPage = 1; // Réinitialiser à la première page
+            clearTimeout(searchTimer);
+            searchTimer = setTimeout(loadQuestions, 500);
         });
 
         // 9. BOUTON 'DETAILS'

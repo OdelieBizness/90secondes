@@ -7,6 +7,7 @@
   "prefer_related_applications": false,
   "categories": ["education", "religion"],
   "description": "Appli de questions/réponses spirituelles",
+  "gcm_sender_id": "103953800507",
   "screenshots": [
     {
      "src": "images/icon-512x512.png",

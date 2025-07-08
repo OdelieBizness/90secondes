@@ -192,6 +192,43 @@
             padding: 20px;
             color: #666;
         }
+
+        .notif-btn {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            padding: 10px 15px;
+            background: #4a6fa5;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            z-index: 1000;
+        }
+
+        /* Pagination et filtres */
+        .pagination button {
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            background: var(--secondary);
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .pagination button:hover {
+            background: #f0f0f0;
+        }
+
+        .filters {
+            display: flex;
+            margin-bottom: 15px;
+        }
+
+        .filters input, .filters select {
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
     </style>
 </head>
 <!-- Chargement des SDK Firebase -->
@@ -226,6 +263,11 @@
         measurementId: "G-P1QY33FF40"
     };
 
+    // Initialisation PRINCIPALE (à faire une seule fois)
+      // if (!firebase.apps.length) {
+      //   firebase.initializeApp(firebaseConfig);
+      // }
+
     // Initialisation
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
@@ -259,17 +301,50 @@
         }
     });
 
-    // Chargement des questions
-    async function loadQuestions() {
+    // Demander la permission et s'abonner
+    async function subscribeToNotifications() {
+      if (!('serviceWorker' in navigator)) return;
+
+      const sw = await navigator.serviceWorker.register('/sw.js');
+      const subscription = await sw.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: 'BAJaEyB-JB257cR3KxQWaDHtcN19Qxlr-uWRFQD4WkJS4i3hDyGlnewr6U71A_hyMrU0R4AsiacN1gzXWBpJGCI' // À générer
+      });
+
+      // Enregistrer l'abonnement dans Firestore
+      await db.collection('subscriptions').add(subscription.toJSON());
+    }
+
+    // Bouton pour déclencher l'abonnement
+    document.getElementById('enable-notifs').addEventListener('click', subscribeToNotifications);
+
+    // Variables globales
+    let currentPage = 1;
+    const questionsPerPage = 10;
+    let searchTerm = '';
+    let categoryFilter = 'all';
+
+    // Écouteurs pour les filtres
+    document.getElementById('filter-category').addEventListener('change', (e) => {
+        categoryFilter = e.target.value;
+        loadQuestions();
+    });
+
+    document.getElementById('search-questions').addEventListener('input', (e) => {
+        searchTerm = e.target.value.toLowerCase();
+        loadQuestions();
+    });
+
+    // Modifiez la fonction loadQuestions pour gérer la pagination
+    async function loadQuestions(page = 1) {
+        currentPage = page;
         const questionsList = document.getElementById('questions-list');
         questionsList.innerHTML = '<div class="loading">Chargement...</div>';
         
         try {
-
             const q = query(
                 collection(db, "questions"),
-                orderBy("createdAt", "desc"),
-                limit(10)
+                orderBy("createdAt", "desc")
             );
 
             const querySnapshot = await getDocs(q);
@@ -280,18 +355,38 @@
                 return;
             }
             
+            // Filtrage côté client
+            const allQuestions = [];
             querySnapshot.forEach((doc) => {
                 const data = doc.data();
+                const matchesCategory = categoryFilter === 'all' || data.category === categoryFilter;
+                const matchesSearch = !searchTerm || 
+                                    data.text.toLowerCase().includes(searchTerm) || 
+                                    (data.author && data.author.toLowerCase().includes(searchTerm));
+                
+                if (matchesCategory && matchesSearch) {
+                    allQuestions.push({ id: doc.id, ...data });
+                }
+            });
+
+            // Pagination
+            const startIndex = (page - 1) * questionsPerPage;
+            const endIndex = startIndex + questionsPerPage;
+            const paginatedQuestions = allQuestions.slice(startIndex, endIndex);
+
+            // Affichage
+            paginatedQuestions.forEach((data) => {
                 const questionElement = document.createElement('div');
                 questionElement.className = `question ${data.status === "answered" ? "answered" : ""}`;
-                questionElement.dataset.id = doc.id;
+                questionElement.dataset.id = data.id;
                 
                 questionElement.innerHTML = `
                     <h3>${data.text}</h3>
                     <div class="meta">
                         Catégorie: ${getCategoryName(data.category)} • 
                         Posée par: ${data.author || "Anonyme"} • 
-                        <span class="vote-count">${data.votes || 0}</span> votes
+                        <span class="vote-count">${data.votes || 0}</span> votes •
+                        ${formatDate(data.createdAt?.toDate())}
                     </div>
                     ${data.status === "answered" ? 
                         data.responses && data.responses.length > 0 ?
@@ -303,15 +398,104 @@
                                 </div>
                             `).join('')
                         : `<a href="${data.videoLink || "#"}" target="_blank" class="video-link">Voir la réponse</a>`
-                    : `<button class="vote-btn" data-id="${doc.id}">👍 Soutenir</button>`}
+                    : `<button class="vote-btn" data-id="${data.id}">👍 Soutenir</button>`}
                 `;
                 
                 questionsList.appendChild(questionElement);
             });
+
+            // Ajout de la pagination
+            renderPagination(allQuestions.length);
+            
         } catch (error) {
             console.error("Erreur de chargement:", error);
             questionsList.innerHTML = '<p>Erreur lors du chargement des questions</p>';
         }
+    }
+
+    // Fonction pour afficher la pagination
+    function renderPagination(totalQuestions) {
+        const totalPages = Math.ceil(totalQuestions / questionsPerPage);
+        if (totalPages <= 1) return;
+
+        const pagination = document.createElement('div');
+        pagination.className = 'pagination';
+        pagination.style.marginTop = '20px';
+        pagination.style.display = 'flex';
+        pagination.style.justifyContent = 'center';
+        pagination.style.gap = '10px';
+
+        // Bouton Précédent
+        if (currentPage > 1) {
+            const prevBtn = document.createElement('button');
+            prevBtn.textContent = '← Précédent';
+            prevBtn.onclick = () => loadQuestions(currentPage - 1);
+            pagination.appendChild(prevBtn);
+        }
+
+        // Pages
+        for (let i = 1; i <= totalPages; i++) {
+            const pageBtn = document.createElement('button');
+            pageBtn.textContent = i;
+            if (i === currentPage) {
+                pageBtn.style.fontWeight = 'bold';
+                pageBtn.style.backgroundColor = '#4a6fa5';
+                pageBtn.style.color = 'white';
+            }
+            pageBtn.onclick = () => loadQuestions(i);
+            pagination.appendChild(pageBtn);
+        }
+
+        // Bouton Suivant
+        if (currentPage < totalPages) {
+            const nextBtn = document.createElement('button');
+            nextBtn.textContent = 'Suivant →';
+            nextBtn.onclick = () => loadQuestions(currentPage + 1);
+            pagination.appendChild(nextBtn);
+        }
+
+        const questionsList = document.getElementById('questions-list');
+        questionsList.appendChild(pagination);
+    }
+
+    // Formatage date
+    function formatDate(date) {
+        if (!date) return "";
+        
+        const now = new Date();
+        const diffInSeconds = Math.floor((now - date) / 1000);
+        
+        if (diffInSeconds < 60) {
+            return `à l'instant`;
+        }
+        
+        const diffInMinutes = Math.floor(diffInSeconds / 60);
+        if (diffInMinutes < 60) {
+            return `il y a ${diffInMinutes} minute${diffInMinutes > 1 ? 's' : ''}`;
+        }
+        
+        const diffInHours = Math.floor(diffInMinutes / 60);
+        if (diffInHours < 24) {
+            return `il y a ${diffInHours} heure${diffInHours > 1 ? 's' : ''}`;
+        }
+        
+        const diffInDays = Math.floor(diffInHours / 24);
+        if (diffInDays < 7) {
+            return `il y a ${diffInDays} jour${diffInDays > 1 ? 's' : ''}`;
+        }
+        
+        const diffInWeeks = Math.floor(diffInDays / 7);
+        if (diffInWeeks < 4) {
+            return `il y a ${diffInWeeks} semaine${diffInWeeks > 1 ? 's' : ''}`;
+        }
+        
+        const diffInMonths = Math.floor(diffInDays / 30);
+        if (diffInMonths < 12) {
+            return `il y a ${diffInMonths} mois`;
+        }
+        
+        const diffInYears = Math.floor(diffInMonths / 12);
+        return `il y a ${diffInYears} an${diffInYears > 1 ? 's' : ''}`;
     }
 
     // Gestion des votes (délégation d'événements)
@@ -447,11 +631,28 @@
 
         <div class="card">
             <h2>Questions récentes</h2>
+            <div class="filters" style="margin-bottom: 20px;">
+                <select id="filter-category" style="padding: 8px; margin-right: 10px;">
+                    <option value="all">Toutes catégories</option>
+                    <option value="vie-spirituelle">Vie spirituelle personnelle</option>
+                    <option value="relations">Relations & Amour</option>
+                    <option value="famille">Famille</option>
+                    <option value="finances">Finances</option>
+                    <option value="bible">Bible & Doctrine</option>
+                    <option value="ministere">Appel & Ministère</option>
+                    <option value="epreuves">Doutes & Épreuves</option>
+                </select>
+                <input type="text" id="search-questions" placeholder="Rechercher..." style="padding: 8px;">
+            </div>
             <div id="questions-list">
                 <div class="loading">Chargement des questions...</div>
             </div>
         </div>
     </div>
+
+    <button id="enable-notifs" class="notif-btn" style="display:none;">
+      🔔 Activer les notifications
+    </button>
 
     <script>
     // Gestion explicite de l'installation
