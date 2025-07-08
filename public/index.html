@@ -23,7 +23,57 @@
     <link rel="apple-touch-icon" href="images/icon-180x180.png">
 
     <!-- Splash Screen (obligatoire pour iOS) -->
-    <link rel="apple-touch-startup-image" href="/splash/launch-1242x2688.png" media="(device-width: 414px) and (device-height: 896px) and (-webkit-device-pixel-ratio: 3)">
+    <!-- iPhone 8/SE (2e/3e gen) -->
+    <link rel="apple-touch-startup-image" 
+          href="splash/ios/iphone-portrait.png"
+          media="(device-width: 375px) and (device-height: 667px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)">
+
+    <!-- iPhone 13/14/15 -->
+    <link rel="apple-touch-startup-image" 
+          href="splash/ios/iphone-portrait.png"
+          media="(device-width: 390px) and (device-height: 844px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
+
+    <!-- iPhone Plus/Max -->
+    <link rel="apple-touch-startup-image" 
+          href="splash/ios/iphone-portrait.png"
+          media="(device-width: 428px) and (device-height: 926px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
+
+    <!-- iPad -->
+    <link rel="apple-touch-startup-image" 
+          href="splash/ios/ipad-portrait.png"
+          media="(device-width: 768px) and (device-height: 1024px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)">
+
+    <!-- iPad Pro 12.9" -->
+    <link rel="apple-touch-startup-image" 
+          href="splash/ios/ipad-portrait.png"
+          media="(device-width: 1024px) and (device-height: 1366px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)">
+
+
+
+
+    <link rel="apple-touch-startup-image" 
+          href="splash/ios/iphone-landscape.png"
+          media="(device-width: 667px) and (device-height: 375px) and (-webkit-device-pixel-ratio: 2) and (orientation: landscape)">
+
+    <!-- iPhone 13/14/15 -->
+    <link rel="apple-touch-startup-image" 
+          href="splash/ios/iphone-landscape.png"
+          media="(device-width: 844px) and (device-height: 390px) and (-webkit-device-pixel-ratio: 3) and (orientation: landscape)">
+
+    <!-- iPhone Plus/Max -->
+    <link rel="apple-touch-startup-image" 
+          href="splash/ios/iphone-landscape.png"
+          media="(device-width: 926px) and (device-height: 428px) and (-webkit-device-pixel-ratio: 3) and (orientation: landscape)">
+
+    <!-- iPad -->
+    <link rel="apple-touch-startup-image" 
+          href="splash/ios/ipad-landscape.png"
+          media="(device-width: 1024px) and (device-height: 768px) and (-webkit-device-pixel-ratio: 2) and (orientation: landscape)">
+
+    <!-- iPad Pro 12.9" -->
+    <link rel="apple-touch-startup-image" 
+          href="splash/ios/ipad-landscape.png"
+          media="(device-width: 1366px) and (device-height: 1024px) and (-webkit-device-pixel-ratio: 2) and (orientation: landscape)">
 
     <!-- Service Worker Registration -->
     <script>
@@ -148,6 +198,11 @@
         .answered {
             border-left-color: var(--success);
         }
+        .response > a {
+            color: var(--success);
+            text-decoration: none;
+            font-weight: bold;
+        }
         .vote-btn {
             background: none;
             border: none;
@@ -229,6 +284,58 @@
             border: 1px solid #ddd;
             border-radius: 4px;
         }
+
+        /* Splashscreens */
+        #splash-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #4a6fa5;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            transition: opacity 0.75s ease-out;
+        }
+          
+        #splash-image {
+            max-width: 90%;
+            max-height: 70%;
+            object-fit: contain;
+            margin-bottom: 20px;
+        }
+          
+        #progress-container {
+            width: 80%;
+            max-width: 300px;
+            height: 6px;
+            background: rgba(255,255,255,0.3);
+            border-radius: 3px;
+            overflow: hidden;
+        }
+          
+        #progress-bar {
+            height: 100%;
+            width: 0%;
+            background: white;
+            transition: width 0.3s ease;
+            border-radius: 3px;
+        }
+          
+        .logo {
+            width: 80px;
+            height: 80px;
+            margin-bottom: 20px;
+            animation: pulse 1.5s infinite alternate;
+        }
+      
+        @keyframes pulse {
+            from { transform: scale(1); opacity: 0.8; }
+            to { transform: scale(1.1); opacity: 1; }
+        }
     </style>
 </head>
 <!-- Chargement des SDK Firebase -->
@@ -271,6 +378,7 @@
     // Initialisation
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
+    let categories = [];
 
     // Référence à la collection
     const questionsRef = collection(db, "questions");
@@ -334,6 +442,21 @@
         searchTerm = e.target.value.toLowerCase();
         loadQuestions();
     });
+
+    function populateCategorySelects() {
+        // Pour le formulaire principal
+        const categorySelect = document.getElementById('category');
+        categorySelect.innerHTML = '<option value="">-- Choisissez une catégorie --</option>' +
+            categories.map(cat => `<option value="${cat.id}">${cat.name}</option>`).join('');
+
+        // Pour le filtre
+        const filterSelect = document.getElementById('filter-category');
+        filterSelect.innerHTML = '<option value="all">Toutes catégories</option>' +
+            categories.map(cat => `<option value="${cat.id}">${cat.name}</option>`).join('');
+    }
+
+    // Appeler loadCategories au chargement
+    document.addEventListener('DOMContentLoaded', loadCategories);
 
     // Modifiez la fonction loadQuestions pour gérer la pagination
     async function loadQuestions(page = 1) {
@@ -567,17 +690,16 @@
     });
 
     // Fonctions utilitaires
+    // Charger les catégories au démarrage
+    async function loadCategories() {
+        const response = await fetch('question-cat-list.json');
+        categories = await response.json();
+        populateCategorySelects();
+    }
+
     function getCategoryName(categoryId) {
-        const categories = {
-            "vie-spirituelle": "Vie spirituelle",
-            "relations": "Relations",
-            "famille": "Famille",
-            "finances": "Finances",
-            "bible": "Bible",
-            "ministere": "Ministère",
-            "epreuves": "Épreuves"
-        };
-        return categories[categoryId] || categoryId;
+        const category = categories.find(cat => cat.id === categoryId);
+        return category ? category.name : categoryId;
     }
 
     function showToast(message, type = "success") {
@@ -597,6 +719,15 @@
         <p>Posez votre question et recevez une réponse en vidéo de 90 secondes maximum !</p>
     </header>
 
+    <!-- Splashscreen -->
+    <div id="splash-screen" style="display: none;">
+        <img src="images/logo.png" class="logo" alt="Logo">
+        <img id="splash-image" alt="Chargement en cours">
+        <div id="progress-container">
+            <div id="progress-bar"></div>
+        </div>
+    </div>
+
     <div class="container">
         <div class="card">
             <h2>Posez votre question</h2>
@@ -610,13 +741,7 @@
                     <label for="category">Catégorie *</label>
                     <select id="category" required>
                         <option value="">-- Choisissez une catégorie --</option>
-                        <option value="vie-spirituelle">Vie spirituelle personnelle</option>
-                        <option value="relations">Relations & Amour</option>
-                        <option value="famille">Famille</option>
-                        <option value="finances">Finances</option>
-                        <option value="bible">Bible & Doctrine</option>
-                        <option value="ministere">Appel & Ministère</option>
-                        <option value="epreuves">Doutes & Épreuves</option>
+                        <!-- Rempli dynamiquement -->
                     </select>
                 </div>
                 
@@ -634,13 +759,7 @@
             <div class="filters" style="margin-bottom: 20px;">
                 <select id="filter-category" style="padding: 8px; margin-right: 10px;">
                     <option value="all">Toutes catégories</option>
-                    <option value="vie-spirituelle">Vie spirituelle personnelle</option>
-                    <option value="relations">Relations & Amour</option>
-                    <option value="famille">Famille</option>
-                    <option value="finances">Finances</option>
-                    <option value="bible">Bible & Doctrine</option>
-                    <option value="ministere">Appel & Ministère</option>
-                    <option value="epreuves">Doutes & Épreuves</option>
+                    <!-- Rempli dynamiquement -->
                 </select>
                 <input type="text" id="search-questions" placeholder="Rechercher..." style="padding: 8px;">
             </div>
@@ -654,6 +773,108 @@
       🔔 Activer les notifications
     </button>
 
+    <!-- Splashscreens -->
+    <script>
+      // Configuration avancée
+      const splashConfig = {
+        minDuration: 2000,       // Durée minimum (ms)
+        maxDuration: 3500,       // Durée maximum si chargement long
+        fadeDuration: 750,       // Durée de l'estompage
+        progressInterval: 50,    // Intervalle de mise à jour de la barre
+        progressIncrement: 1     // Incrément de progression (%)
+      };
+
+      // Détection complète de l'appareil et orientation
+      function getSplashConfig() {
+        const userAgent = navigator.userAgent;
+        const isMobile = /Mobi|Android|iPhone|iPad|iPod/i.test(userAgent);
+        const isIOS = /iPhone|iPad|iPod/i.test(userAgent);
+        const isAndroid = /Android/i.test(userAgent);
+        const isTablet = /iPad|Android|Tablet/i.test(userAgent) || 
+                        (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+        const orientation = window.innerWidth > window.innerHeight ? 'landscape' : 'portrait';
+        
+        return {
+          platform: isIOS ? 'ios' : isAndroid ? 'android' : 'desktop',
+          deviceType: isTablet ? 'tablet' : isMobile ? 'phone' : 'desktop',
+          orientation: orientation
+        };
+      }
+
+      // Obtenir l'image de splash appropriée
+      function getSplashImage(config) {
+        const basePath = 'splash';
+        
+        if (config.platform === 'ios') {
+          if (config.deviceType === 'tablet') {
+            return `${basePath}/ios/ipad-${config.orientation}.png`;
+          }
+          return `${basePath}/ios/iphone-${config.orientation}.png`;
+        }
+        
+        if (config.platform === 'android') {
+          if (config.deviceType === 'tablet') {
+            return `${basePath}/android/tablet-${config.orientation}.png`;
+          }
+          return `${basePath}/android/phone-${config.orientation}.png`;
+        }
+        
+        // Desktop par défaut
+        return `${basePath}/desktop/${config.orientation}.png`;
+      }
+
+      // Afficher le splash screen avec progression
+      function showSplash() {
+        const config = getSplashConfig();
+        const splash = document.getElementById('splash-screen');
+        const splashImage = document.getElementById('splash-image');
+        const progressBar = document.getElementById('progress-bar');
+        
+        splash.style.display = 'flex';
+        splashImage.src = getSplashImage(config);
+        
+        let progress = 0;
+        const startTime = Date.now();
+        
+        // Animation de la barre de progression
+        const progressInterval = setInterval(() => {
+          const elapsed = Date.now() - startTime;
+          const remainingTime = splashConfig.minDuration - elapsed;
+          
+          // Calcul dynamique de la progression
+          if (remainingTime > 0) {
+            progress = Math.min(
+              progress + splashConfig.progressIncrement,
+              (1 - (remainingTime / splashConfig.minDuration)) * 100);
+          } else {
+            progress = Math.min(progress + splashConfig.progressIncrement, 100);
+          }
+          
+          progressBar.style.width = `${progress}%`;
+          
+          // Masquer quand tout est chargé ou durée max atteinte
+          if (progress >= 100 || elapsed >= splashConfig.maxDuration) {
+            clearInterval(progressInterval);
+            splash.style.opacity = '0';
+            
+            setTimeout(() => {
+              splash.remove();
+            }, splashConfig.fadeDuration);
+          }
+        }, splashConfig.progressInterval);
+      }
+
+      // Détection du changement d'orientation
+      window.addEventListener('resize', () => {
+        if (document.getElementById('splash-screen')) {
+          const config = getSplashConfig();
+          document.getElementById('splash-image').src = getSplashImage(config);
+        }
+      });
+
+      // Démarrer au chargement DOM (pas besoin d'attendre toutes les ressources)
+      document.addEventListener('DOMContentLoaded', showSplash);
+    </script>
     <script>
     // Gestion explicite de l'installation
     let deferredPrompt;

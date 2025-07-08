@@ -483,6 +483,7 @@
         let db;
         let auth;
         let currentUser = null;
+        let categories = [];
 
         function initializeFirebase() {
           firebase.initializeApp(firebaseConfig);
@@ -521,6 +522,12 @@
             });
             console.log(await response.json());
           });
+        }
+
+        async function loadCategories() {
+            const response = await fetch('question-cat-list.json');
+            categories = await response.json();
+            populateCategorySelects();
         }
 
         // 3. CHARGEMENT DES QUESTIONS
@@ -818,7 +825,7 @@
               videoLink: null,
               answeredAt: firebase.firestore.FieldValue.serverTimestamp()
               });
-              sendPushNotification(questionId, questionText);
+              //sendPushNotification(questionId, questionText);
               
               showToast("Réponses enregistrées");
               loadQuestions();
@@ -883,16 +890,15 @@
 
         // 6. FONCTIONS UTILITAIRES
         function getCategoryName(categoryId) {
-          const categories = {
-            "vie-spirituelle": "Vie spirituelle",
-            "relations": "Relations",
-            "famille": "Famille",
-            "finances": "Finances",
-            "bible": "Bible",
-            "ministere": "Ministère",
-            "epreuves": "Épreuves"
-          };
-          return categories[categoryId] || categoryId;
+            const category = categories.find(cat => cat.id === categoryId);
+            return category ? category.name : categoryId;
+        }
+
+        function populateCategorySelects() {
+            // Pour le filtre catégorie
+            const filterSelect = document.getElementById('filter-category');
+            filterSelect.innerHTML = '<option value="all">Toutes catégories</option>' +
+                categories.map(cat => `<option value="${cat.id}">${cat.name}</option>`).join('');
         }
 
         function getStatusName(status) {
@@ -1026,7 +1032,10 @@
         }
 
         // 10. INITIALISATION
-        document.addEventListener('DOMContentLoaded', initializeFirebase);
+        document.addEventListener('DOMContentLoaded', () => {
+            initializeFirebase();
+            loadCategories();
+        });
 
 
         // Gestion des réponses multiples
@@ -1164,13 +1173,7 @@
                     <label for="filter-category">Catégorie</label>
                     <select id="filter-category">
                         <option value="all">Toutes catégories</option>
-                        <option value="vie-spirituelle">Vie spirituelle</option>
-                        <option value="relations">Relations & Amour</option>
-                        <option value="famille">Famille</option>
-                        <option value="finances">Finances</option>
-                        <option value="bible">Bible & Doctrine</option>
-                        <option value="ministere">Appel & Ministère</option>
-                        <option value="epreuves">Doutes & Épreuves</option>
+                        <!-- Rempli dynamiquement -->
                     </select>
                 </div>
                 

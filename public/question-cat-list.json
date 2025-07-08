@@ -1,0 +1,30 @@
+[
+  {
+    "id": "vie-spirituelle",
+    "name": "Vie spirituelle"
+  },
+  {
+    "id": "relations",
+    "name": "Relations & Amour"
+  },
+  {
+    "id": "famille",
+    "name": "Famille"
+  },
+  {
+    "id": "finances",
+    "name": "Finances"
+  },
+  {
+    "id": "bible",
+    "name": "Bible & Doctrine"
+  },
+  {
+    "id": "ministere",
+    "name": "Appel & Ministère"
+  },
+  {
+    "id": "epreuves",
+    "name": "Doutes & Épreuves"
+  }
+]

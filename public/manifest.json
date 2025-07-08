@@ -38,6 +38,79 @@
       "type": "image/png"
     }
   ],
+  "splash_screens": [
+    {
+      "src": "splash/android/phone-portrait.png",
+      "sizes": "1080x1920",
+      "type": "image/png",
+      "form_factor": "phone",
+      "orientation": "portrait"
+    },
+    {
+      "src": "splash/android/tablet-portrait.png",
+      "sizes": "1080x1920",
+      "type": "image/png",
+      "form_factor": "phone",
+      "orientation": "portrait"
+    },
+    {
+      "src": "splash/android/phone-landscape.png",
+      "sizes": "1920x1080",
+      "type": "image/png",
+      "form_factor": "phone",
+      "orientation": "portrait"
+    },
+    {
+      "src": "splash/android/tablet-landscape.png",
+      "sizes": "1920x1080",
+      "type": "image/png",
+      "form_factor": "phone",
+      "orientation": "portrait"
+    },
+    {
+      "src": "splash/desktop/portrait.png",
+      "sizes": "1080x1920",
+      "type": "image/png",
+      "form_factor": "phone",
+      "orientation": "portrait"
+    },
+    {
+      "src": "splash/desktop/landscape.png",
+      "sizes": "1920x1080",
+      "type": "image/png",
+      "form_factor": "phone",
+      "orientation": "portrait"
+    },
+    {
+      "src": "splash/ios/iphone-portrait.png",
+      "sizes": "1080x1920",
+      "type": "image/png",
+      "form_factor": "phone",
+      "orientation": "portrait"
+    },
+    {
+      "src": "splash/ios/ipad-portrait.png",
+      "sizes": "1080x1920",
+      "type": "image/png",
+      "form_factor": "phone",
+      "orientation": "portrait"
+    },
+    {
+      "src": "splash/ios/iphone-landscape.png",
+      "sizes": "1920x1080",
+      "type": "image/png",
+      "form_factor": "phone",
+      "orientation": "portrait"
+    },
+    {
+      "src": "splash/ios/ipad-landscape.png",
+      "sizes": "1920x1080",
+      "type": "image/png",
+      "form_factor": "phone",
+      "orientation": "portrait"
+    }
+    // Ajoutez toutes les autres configurations
+  ],
   "ios": {
     "apple-mobile-web-app-capable": "yes",
     "apple-mobile-web-app-status-bar-style": "black-translucent"

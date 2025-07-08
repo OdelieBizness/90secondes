@@ -14,6 +14,13 @@ const ASSETS_TO_CACHE = [
   '/manifest.json'
 ];
 
+const splashAssets = [
+  '/splash/desktop/portrait.png',
+  '/splash/desktop/landscape.png',
+  '/splash/ios/iphone-portrait.png',
+  // Ajoutez toutes les autres variantes
+];
+
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME)
@@ -31,26 +38,34 @@ self.addEventListener('fetch', (event) => {
   }
 });
 
-// self.addEventListener('push', (event) => {
-//   const payload = event.data?.json() || { 
-//     title: "Nouvelle réponse", 
-//     body: "Pasteur D. a répondu à une question",
-//     data: { questionId: '' }
-//   };
+self.addEventListener('push', (event) => {
+  const payload = event.data?.json() || { 
+    title: "Nouvelle réponse", 
+    body: "Pasteur D. a répondu à une question",
+    data: { questionId: '' }
+  };
 
-//   event.waitUntil(
-//     self.registration.showNotification(payload.title, {
-//       body: payload.body,
-//       icon: '/images/icon-192x192.png',
-//       data: payload.data
-//     })
-//   );
-// });
+  event.waitUntil(
+    self.registration.showNotification(payload.title, {
+      body: payload.body,
+      icon: '/images/icon-192x192.png',
+      data: payload.data
+    })
+  );
+});
 
-// self.addEventListener('notificationclick', (event) => {
-//   event.notification.close();
-//   const url = `/?question=${event.notification.data?.questionId || ''}`;
-//   event.waitUntil(
-//     clients.openWindow(url)
-//   );
-// });
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+  const url = `/?question=${event.notification.data?.questionId || ''}`;
+  event.waitUntil(
+    clients.openWindow(url)
+  );
+});
+
+self.addEventListener('install', (event) => {
+  event.waitUntil(
+    caches.open('splash-v2').then((cache) => {
+      return cache.addAll([...splashAssets, '/images/logo.png']);
+    })
+  );
+});
