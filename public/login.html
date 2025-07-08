@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Connexion Admin</title>
+    <title>Connexion Admin - 90 secondes avec Pasteur D</title>
+    <meta name="description" content="Espace d'administration sécurisé pour le site '90 secondes avec Pasteur D'">
 
     <!-- Manifest -->
     <link rel="manifest" href="/manifest.json">
@@ -13,67 +14,132 @@
     <meta name="apple-mobile-web-app-status-bar" content="#4a6fa5">
     <meta name="theme-color" content="#4a6fa5">
 
-    <!-- Service Worker Registration -->
-    <script>
-      if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
-          navigator.serviceWorker.register('/sw.js')
-            .then(registration => {
-              console.log('ServiceWorker enregistré avec succès');
-            })
-            .catch(err => {
-              console.log('Échec de l\'enregistrement du ServiceWorker:', err);
-            });
-        });
-      }
-    </script>
-
     <style>
         *, *:before, *:after {
             box-sizing: border-box;
         }
-        body { font-family: Arial, sans-serif; max-width: 400px; margin: 50px auto; padding: 20px; }
-        input { width: 100%; padding: 10px; margin: 10px 0; }
-        button { background: #4285F4; color: white; border: none; padding: 10px 15px; cursor: pointer; }
+        body {
+            font-family: 'Arial', sans-serif;
+            max-width: 400px;
+            margin: 50px auto;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        h2 {
+            color: #4a6fa5;
+            text-align: center;
+        }
+        .login-container {
+            background: #fff;
+            padding: 25px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        input {
+            width: 100%;
+            padding: 12px;
+            margin: 8px 0;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 16px;
+        }
+        button {
+            width: 100%;
+            background: #4a6fa5;
+            color: white;
+            border: none;
+            padding: 12px;
+            margin-top: 10px;
+            border-radius: 4px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        button:hover {
+            background: #166088;
+        }
+        .brand {
+            text-align: center;
+            margin-bottom: 20px;
+            font-weight: bold;
+            color: #4a6fa5;
+        }
     </style>
 </head>
 <body>
-    <h2>Connexion Admin</h2>
-    <input type="email" id="email" placeholder="Email admin">
-    <input type="password" id="password" placeholder="Mot de passe">
-    <button id="login-btn">Se connecter</button>
+    <div class="login-container">
+        <div class="brand">90 secondes avec Pasteur D</div>
+        <h2>Connexion Admin</h2>
+        <form id="login-form">
+            <input type="email" id="email" placeholder="Email admin" required autocomplete="email">
+            <input type="password" id="password" placeholder="Mot de passe" required autocomplete="current-password">
+            <button type="submit" id="login-btn">Se connecter</button>
+        </form>
+    </div>
 
+    <!-- Chargement synchronisé des scripts Firebase -->
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
-    <script type="module">
-        // Import the functions you need from the SDKs you need
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-app.js";
-        import { getAnalytics } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-analytics.js";
-
-        // Même configuration Firebase que dans les autres fichiers
-        const firebaseConfig = {
-            apiKey: "AIzaSyBofrTS4e4P55w-68cmK2GlXW4usc9656o",
-            authDomain: "secondes-avec-pst-d.firebaseapp.com",
-            projectId: "secondes-avec-pst-d",
-            storageBucket: "secondes-avec-pst-d.firebasestorage.app",
-            messagingSenderId: "502822204066",
-            appId: "1:502822204066:web:f170b15864e222f32f9dfb",
-            measurementId: "G-P1QY33FF40"
-        };
-        firebase.initializeApp(firebaseConfig);
-        const auth = firebase.auth();
-
-        document.getElementById('login-btn').addEventListener('click', () => {
-            const email = document.getElementById('email').value;
-            const password = document.getElementById('password').value;
+    <script>
+        // Configuration Firebase
+        document.addEventListener('DOMContentLoaded', function() {
+            const firebaseConfig = {
+                apiKey: "AIzaSyBofrTS4e4P55w-68cmK2GlXW4usc9656o",
+                authDomain: "secondes-avec-pst-d.firebaseapp.com",
+                projectId: "secondes-avec-pst-d",
+                storageBucket: "secondes-avec-pst-d.firebasestorage.app",
+                messagingSenderId: "502822204066",
+                appId: "1:502822204066:web:f170b15864e222f32f9dfb",
+                measurementId: "G-P1QY33FF40"
+            };
             
-            auth.signInWithEmailAndPassword(email, password)
-                .then(() => {
-                    window.location.href = "admin.html";
-                })
-                .catch(error => {
-                    alert("Erreur de connexion: " + error.message);
+            // Initialisation Firebase
+            firebase.initializeApp(firebaseConfig);
+            const auth = firebase.auth();
+
+            // Gestion du formulaire
+            document.getElementById('login-form').addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                const email = document.getElementById('email').value;
+                const password = document.getElementById('password').value;
+                const loginBtn = document.getElementById('login-btn');
+                
+                // Désactiver le bouton pendant la tentative de connexion
+                loginBtn.disabled = true;
+                loginBtn.textContent = "Connexion en cours...";
+                
+                auth.signInWithEmailAndPassword(email, password)
+                    .then((userCredential) => {
+                        // Vérifier si l'utilisateur est admin
+                        return userCredential.user.getIdTokenResult()
+                            .then((idTokenResult) => {
+                                if (idTokenResult.claims.admin) {
+                                    window.location.href = "admin.html";
+                                } else {
+                                    throw new Error("Accès réservé aux administrateurs");
+                                }
+                            });
+                    })
+                    .catch((error) => {
+                        alert("Erreur: " + error.message);
+                        loginBtn.disabled = false;
+                        loginBtn.textContent = "Se connecter";
+                    });
+            });
+
+            // Enregistrement du Service Worker
+            if ('serviceWorker' in navigator) {
+                window.addEventListener('load', () => {
+                    navigator.serviceWorker.register('/sw.js')
+                        .then(registration => {
+                            console.log('ServiceWorker enregistré');
+                        })
+                        .catch(err => {
+                            console.log('Erreur ServiceWorker:', err);
+                        });
                 });
+            }
         });
     </script>
 </body>
