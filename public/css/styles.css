@@ -1,0 +1,245 @@
+        :root {
+            --primary: #4a6fa5;
+            --secondary: #166088;
+            --light: #f8f9fa;
+            --dark: #343a40;
+            --success: #4CAF50;
+        }
+        *, *:before, *:after {
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Roboto', sans-serif;
+            line-height: 1.6;
+            color: var(--dark);
+            background-color: var(--light);
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .container {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 20px;
+        }
+        @media (min-width: 768px) {
+            .container {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+        .card {
+            background-color: white;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: var(--primary);
+            margin-bottom: 10px;
+        }
+        h2 {
+            color: var(--secondary);
+            font-size: 1.3rem;
+            margin-top: 0;
+        }
+        form div {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+        }
+        input, textarea, select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-family: inherit;
+            font-size: 1rem;
+        }
+        textarea {
+            min-height: 120px;
+            resize: vertical;
+        }
+        button {
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 500;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: var(--secondary);
+        }
+        .question {
+            border-left: 3px solid var(--primary);
+            padding-left: 15px;
+            margin-bottom: 20px;
+            transition: all 0.3s;
+        }
+        .question:hover {
+            transform: translateY(-2px);
+        }
+        .question h3 {
+            margin-top: 0;
+            color: var(--dark);
+        }
+        .meta {
+            font-size: 0.85rem;
+            color: #666;
+            margin: 8px 0;
+        }
+        .answered {
+            border-left-color: var(--success);
+        }
+        .response > a {
+            color: var(--success);
+            text-decoration: none;
+            font-weight: bold;
+        }
+        .vote-btn {
+            background: none;
+            border: none;
+            color: var(--primary);
+            padding: 0;
+            margin-right: 10px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .video-link {
+            color: var(--success);
+            font-weight: 500;
+            text-decoration: none;
+        }
+        .video-link:hover {
+            text-decoration: underline;
+        }
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background-color: var(--success);
+            color: white;
+            padding: 12px 20px;
+            border-radius: 4px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+            z-index: 1000;
+            animation: fadeIn 0.3s;
+        }
+        .toast-error {
+            background-color: #f44336;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #666;
+        }
+
+        .notif-btn {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            padding: 10px 15px;
+            background: #4a6fa5;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            z-index: 1000;
+        }
+
+        /* Pagination et filtres */
+        .pagination button {
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            background: var(--secondary);
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .pagination button:hover {
+            background: #f0f0f0;
+        }
+
+        .filters {
+            display: flex;
+            margin-bottom: 15px;
+        }
+
+        .filters input, .filters select {
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+
+        /* Splashscreens */
+        #splash-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #4a6fa5;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            transition: opacity 0.75s ease-out;
+        }
+          
+        #splash-image {
+            max-width: 90%;
+            max-height: 70%;
+            object-fit: contain;
+            margin-bottom: 20px;
+        }
+          
+        #progress-container {
+            width: 80%;
+            max-width: 300px;
+            height: 6px;
+            background: rgba(255,255,255,0.3);
+            border-radius: 3px;
+            overflow: hidden;
+        }
+          
+        #progress-bar {
+            height: 100%;
+            width: 0%;
+            background: white;
+            transition: width 0.3s ease;
+            border-radius: 3px;
+        }
+          
+        .logo {
+            width: 80px;
+            height: 80px;
+            margin-bottom: 20px;
+            animation: pulse 1.5s infinite alternate;
+        }
+      
+        @keyframes pulse {
+            from { transform: scale(1); opacity: 0.8; }
+            to { transform: scale(1.1); opacity: 1; }
+        }

@@ -80,9 +80,10 @@
     <!-- Chargement synchronisé des scripts Firebase -->
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
-    <script>
+
+    <script type="module">
         // Configuration Firebase
-        document.addEventListener('DOMContentLoaded', function() {
+        function initializeFirebase() {
             const firebaseConfig = {
                 apiKey: "AIzaSyBofrTS4e4P55w-68cmK2GlXW4usc9656o",
                 authDomain: "secondes-avec-pst-d.firebaseapp.com",
@@ -92,8 +93,7 @@
                 appId: "1:502822204066:web:f170b15864e222f32f9dfb",
                 measurementId: "G-P1QY33FF40"
             };
-            
-            // Initialisation Firebase
+
             firebase.initializeApp(firebaseConfig);
             const auth = firebase.auth();
 
@@ -110,37 +110,34 @@
                 loginBtn.textContent = "Connexion en cours...";
                 
                 auth.signInWithEmailAndPassword(email, password)
-                    .then((userCredential) => {
-                        // Vérifier si l'utilisateur est admin
-                        return userCredential.user.getIdTokenResult()
-                            .then((idTokenResult) => {
-                                if (idTokenResult.claims.admin) {
-                                    window.location.href = "admin.html";
-                                } else {
-                                    throw new Error("Accès réservé aux administrateurs");
-                                }
-                            });
+                    .then(() => {
+                        window.location.href = "admin.html";
                     })
                     .catch((error) => {
                         alert("Erreur: " + error.message);
                         loginBtn.disabled = false;
                         loginBtn.textContent = "Se connecter";
                     });
-            });
-
-            // Enregistrement du Service Worker
-            if ('serviceWorker' in navigator) {
-                window.addEventListener('load', () => {
-                    navigator.serviceWorker.register('/sw.js')
-                        .then(registration => {
-                            console.log('ServiceWorker enregistré');
-                        })
-                        .catch(err => {
-                            console.log('Erreur ServiceWorker:', err);
-                        });
                 });
-            }
+        }
+
+        // Enregistrement du Service Worker
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/sw.js')
+                    .then(registration => {
+                        console.log('ServiceWorker enregistré');
+                    })
+                    .catch(err => {
+                        console.log('Erreur ServiceWorker:', err);
+                    });
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            initializeFirebase();
         });
     </script>
+    <script type="module" src="/js/modules/firebase-init.js"></script>
 </body>
 </html>
