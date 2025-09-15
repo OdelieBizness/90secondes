@@ -15,8 +15,8 @@
     <link rel="manifest" href="/manifest.json">
 
     <!-- iOS support -->
-    <meta name="apple-mobile-web-app-status-bar" content="#4a6fa5">
-    <meta name="theme-color" content="#4a6fa5">
+    <meta name="apple-mobile-web-app-status-bar" content="#006C67">
+    <meta name="theme-color" content="#006C67">
 
     <!-- iOS spécifique -->
     <meta name="mobile-web-app-capable" content="yes">
@@ -98,14 +98,28 @@
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
 
-<body>
+<body class="theme-warmgrey"> <!-- or theme-blanc -->
     <header>
-        <h1>90 secondes avec Pasteur D</h1>
-        <p>Posez votre question et recevez une réponse en vidéo de 90 secondes maximum !</p>
+        <div class="logo-container">
+            <img src="./images/logo-vases.png" alt="Logo Vases d'Honneur" class="site-logo">
+            <img src="./images/logo-pst-d-white.png" alt="Logo Pst Desire" class="site-logo" id="logo-pst-d">
+        </div>
+        <div>
+            <h1>Q&A avec Pasteur D</h1>
+            <p>Posez votre question et recevez une réponse en vidéo.</p>    
+        </div>
     </header>
 
+    <!-- Remove the class display-none to use the theming toggle -->
+    <div class="theme-toggle-container display-none">
+      <button id="theme-toggle" class="theme-toggle-btn">
+        🌞 Thème clair
+      </button>
+    </div>
+
+
     <!-- Splashscreen -->
-    <div id="splash-screen" style="display: none;">
+    <div id="splash-screen" style="display: block;">
         <img src="images/logo.png" class="logo" alt="Logo">
         <img id="splash-image" alt="Chargement en cours">
         <div id="progress-container">
@@ -162,5 +176,26 @@
     <script type="module" src="/js/modules/index-app.js"></script>
     <script src="/js/splashes.js"></script>
     <script src="/js/scripts.js"></script>
+
+    <script>
+      const body = document.body;
+      const toggleBtn = document.getElementById('theme-toggle');
+
+      // Définir un thème par défaut
+      if (!body.classList.contains('theme-blanc') && !body.classList.contains('theme-warmgrey')) {
+        body.classList.add('theme-blanc');
+      }
+
+      toggleBtn.addEventListener('click', () => {
+        if (body.classList.contains('theme-blanc')) {
+          body.classList.replace('theme-blanc', 'theme-warmgrey');
+          toggleBtn.textContent = '🌙 Thème gris chaud';
+        } else {
+          body.classList.replace('theme-warmgrey', 'theme-blanc');
+          toggleBtn.textContent = '🌞 Thème clair';
+        }
+      });
+    </script>
+
 </body>
 </html>

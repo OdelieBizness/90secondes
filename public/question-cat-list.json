@@ -26,5 +26,9 @@
   {
     "id": "epreuves",
     "name": "Doutes & Épreuves"
+  },
+  {
+    "id": "autres",
+    "name": "Autres"
   }
 ]

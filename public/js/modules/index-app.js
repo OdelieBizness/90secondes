@@ -46,7 +46,7 @@
         try {
             await addDoc(questionsRef, questionData);
             document.getElementById('question-form').reset();
-            showToast("Question envoyée !");
+            showToast("📨 Question transmise au pasteur. Vous la verrez apparaître une fois répondue.");
             loadQuestions().then(setupVoteButtons);
         } catch (error) {
             console.error("Erreur:", error);
@@ -101,7 +101,15 @@
     }
 
     // Appeler loadCategories au chargement
-    document.addEventListener('DOMContentLoaded', loadCategories);
+    //document.addEventListener('DOMContentLoaded', loadCategories);
+    document.addEventListener('DOMContentLoaded', () => {
+        loadCategories();
+        loadQuestions().then(() => {
+            setupAdminToggle();
+            setupVoteButtons();
+        });
+    });
+
 
     // Modifiez la fonction loadQuestions pour gérer la pagination
     async function loadQuestions(page = 1) {
@@ -112,6 +120,7 @@
         try {
             const q = query(
                 collection(db, "questions"),
+               // where("status", "==", "answered"), // ← FILTRE IMPORTANT
                 orderBy("createdAt", "desc")
             );
 
@@ -119,7 +128,7 @@
             questionsList.innerHTML = '';
 
             if (querySnapshot.empty) {
-                questionsList.innerHTML = '<p>Aucune question pour le moment. Soyez le premier !</p>';
+                questionsList.innerHTML = '<p>Aucune question pour le moment.</p>';
                 return;
             }
             
@@ -151,17 +160,51 @@
                 return url;
             }
 
+            // paginatedQuestions.forEach((data) => {
+            //     const questionElement = document.createElement('div');
+            //     questionElement.className = `question ${data.status === "answered" ? "answered" : ""}`;
+            //     questionElement.dataset.id = data.id;
+                
+            //     questionElement.innerHTML = `
+            //         <h3>${data.text}</h3>
+            //         <div class="meta">
+            //             Catégorie: ${getCategoryName(data.category)} • 
+            //             Posée par: ${data.author || "Anonyme"} • 
+            //             <span class="vote-count">${data.votes || 0}</span> votes •
+            //             ${formatDate(data.createdAt?.toDate())}
+            //         </div>
+            //         ${data.status === "answered" ? 
+            //             data.responses && data.responses.length > 0 ?
+            //                 data.responses.map((res, i) => `
+            //                     <div class="response">
+            //                         <a href="${ensureAbsoluteUrl(res.videoUrl)}" target="_blank" rel="noopener noreferrer">
+            //                             Voir réponse ${i+1}: ${res.title || 'Sans titre'}
+            //                         </a>
+            //                     </div>
+            //                 `).join('')
+            //             : `<a href="${ensureAbsoluteUrl(data.videoLink || "#")}" target="_blank" rel="noopener noreferrer" class="video-link">Voir la réponse</a>`
+            //         : `<button class="vote-btn" data-id="${data.id}">👍 Soutenir</button>`}
+            //     `;
+                
+            //     questionsList.appendChild(questionElement);
+            // });
+
             paginatedQuestions.forEach((data) => {
                 const questionElement = document.createElement('div');
                 questionElement.className = `question ${data.status === "answered" ? "answered" : ""}`;
                 questionElement.dataset.id = data.id;
-                
+
+                // MASQUER les questions sans réponse
+                if (data.status !== 'answered') {
+                    questionElement.style.display = 'none';
+                    questionElement.classList.add('pending-question');
+                }
+
                 questionElement.innerHTML = `
                     <h3>${data.text}</h3>
                     <div class="meta">
                         Catégorie: ${getCategoryName(data.category)} • 
-                        Posée par: ${data.author || "Anonyme"} • 
-                        <span class="vote-count">${data.votes || 0}</span> votes •
+                        Posée par: ${data.author || "Anonyme"} •
                         ${formatDate(data.createdAt?.toDate())}
                     </div>
                     ${data.status === "answered" ? 
@@ -174,11 +217,34 @@
                                 </div>
                             `).join('')
                         : `<a href="${ensureAbsoluteUrl(data.videoLink || "#")}" target="_blank" rel="noopener noreferrer" class="video-link">Voir la réponse</a>`
-                    : `<button class="vote-btn" data-id="${data.id}">👍 Soutenir</button>`}
+                    : `<span class="pending-badge">⏳ En attente de réponse</span>`}
                 `;
                 
                 questionsList.appendChild(questionElement);
             });
+                
+            //     questionElement.innerHTML = `
+            //         <h3>${data.text}</h3>
+            //         <div class="meta">
+            //             Catégorie: ${getCategoryName(data.category)} • 
+            //             Posée par: ${data.author || "Anonyme"} •
+            //             ${formatDate(data.createdAt?.toDate())}
+            //         </div>
+            //         ${data.status === "answered" ? 
+            //             data.responses && data.responses.length > 0 ?
+            //                 data.responses.map((res, i) => `
+            //                     <div class="response">
+            //                         <a href="${ensureAbsoluteUrl(res.videoUrl)}" target="_blank" rel="noopener noreferrer">
+            //                             Voir réponse ${i+1}: ${res.title || 'Sans titre'}
+            //                         </a>
+            //                     </div>
+            //                 `).join('')
+            //             : `<a href="${ensureAbsoluteUrl(data.videoLink || "#")}" target="_blank" rel="noopener noreferrer" class="video-link">Voir la réponse</a>`
+            //         : ``}
+            //     `;
+                
+            //     questionsList.appendChild(questionElement);
+            // });
 
             // Ajout de la pagination
             renderPagination(allQuestions.length);
@@ -187,6 +253,36 @@
             console.error("Erreur de chargement:", error);
             questionsList.innerHTML = '<p>Erreur lors du chargement des questions</p>';
         }
+    }
+
+    // Fonction pour basculer l'affichage des questions en attente
+    function setupAdminToggle() {
+        const adminView = document.createElement('div');
+        adminView.className = 'admin-view';
+        adminView.innerHTML = `
+            <button id="toggle-pending" class="btn btn-secondary">
+                👁️ Voir les questions en attente
+            </button>
+        `;
+        
+        const questionsList = document.getElementById('questions-list');
+        questionsList.parentNode.insertBefore(adminView, questionsList);
+        
+        // Gestion du clic
+        document.getElementById('toggle-pending').addEventListener('click', () => {
+            const pendingQuestions = document.querySelectorAll('.pending-question');
+            const button = document.getElementById('toggle-pending');
+            
+            pendingQuestions.forEach(question => {
+                if (question.style.display === 'none') {
+                    question.style.display = 'block';
+                    button.textContent = '👁️ Masquer les questions en attente';
+                } else {
+                    question.style.display = 'none';
+                    button.textContent = '👁️ Voir les questions en attente';
+                }
+            });
+        });
     }
 
     // Fonction pour afficher la pagination
@@ -215,7 +311,7 @@
             pageBtn.textContent = i;
             if (i === currentPage) {
                 pageBtn.style.fontWeight = 'bold';
-                pageBtn.style.backgroundColor = '#4a6fa5';
+                pageBtn.style.backgroundColor = '#006C67';
                 pageBtn.style.color = 'white';
             }
             pageBtn.onclick = () => loadQuestions(i);

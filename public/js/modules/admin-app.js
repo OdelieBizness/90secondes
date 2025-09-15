@@ -154,7 +154,7 @@
                 pageBtn.textContent = i;
                 if (i === currentPage) {
                     pageBtn.style.fontWeight = 'bold';
-                    pageBtn.style.backgroundColor = '#4a6fa5';
+                    pageBtn.style.backgroundColor = '#006C67';
                     pageBtn.style.color = 'white';
                 }
                 pageBtn.onclick = () => {

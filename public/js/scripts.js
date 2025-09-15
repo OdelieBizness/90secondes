@@ -34,7 +34,7 @@
         bottom: 20px;
         right: 20px;
         padding: 12px 24px;
-        background: #4a6fa5;
+        background: #006C67;
         color: white;
         border: none;
         border-radius: 4px;
@@ -57,7 +57,7 @@
             bottom: 0;
             left: 0;
             right: 0;
-            background: #4a6fa5;
+            background: #006C67;
             color: white;
             padding: 15px;
             text-align: center;
