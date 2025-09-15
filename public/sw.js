@@ -10,7 +10,7 @@ function shouldIgnoreRequest(request) {
   ].some(scheme => request.url.startsWith(scheme));
 }
 
-const CACHE_NAME = 'v8'; // Incrémentez la version
+const CACHE_NAME = 'v9'; // Incrémentez la version
 const ASSETS_TO_CACHE = [
   '/',
   '/index.html',
