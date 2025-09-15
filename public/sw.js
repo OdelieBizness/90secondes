@@ -10,7 +10,7 @@ function shouldIgnoreRequest(request) {
   ].some(scheme => request.url.startsWith(scheme));
 }
 
-const CACHE_NAME = 'v7'; // Incrémentez la version
+const CACHE_NAME = 'v8'; // Incrémentez la version
 const ASSETS_TO_CACHE = [
   '/',
   '/index.html',
@@ -34,7 +34,7 @@ const ASSETS_TO_CACHE = [
   'https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore.js'
 ];
 
-const SPLASH_CACHE = 'splash-v2';
+const SPLASH_CACHE = 'splash-v3';
 const splashAssets = [
   '/splash/desktop/portrait.png',
   '/splash/desktop/landscape.png',
