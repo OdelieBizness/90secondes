@@ -160,6 +160,9 @@
                 return url;
             }
 
+            await renderQuestionsWithThumbnails(paginatedQuestions);
+            setupYouTubeThumbnails();
+
             // paginatedQuestions.forEach((data) => {
             //     const questionElement = document.createElement('div');
             //     questionElement.className = `question ${data.status === "answered" ? "answered" : ""}`;
@@ -189,39 +192,71 @@
             //     questionsList.appendChild(questionElement);
             // });
 
-            paginatedQuestions.forEach((data) => {
-                const questionElement = document.createElement('div');
-                questionElement.className = `question ${data.status === "answered" ? "answered" : ""}`;
-                questionElement.dataset.id = data.id;
+            // paginatedQuestions.forEach((data) => {
+            //     const questionElement = document.createElement('div');
+            //     questionElement.className = `question ${data.status === "answered" ? "answered" : ""}`;
+            //     questionElement.dataset.id = data.id;
 
-                // MASQUER les questions sans réponse
-                if (data.status !== 'answered') {
-                    questionElement.style.display = 'none';
-                    questionElement.classList.add('pending-question');
-                }
-
-                questionElement.innerHTML = `
-                    <h3>${data.text}</h3>
-                    <div class="meta">
-                        Catégorie: ${getCategoryName(data.category)} • 
-                        Posée par: ${data.author || "Anonyme"} •
-                        ${formatDate(data.createdAt?.toDate())}
-                    </div>
-                    ${data.status === "answered" ? 
-                        data.responses && data.responses.length > 0 ?
-                            data.responses.map((res, i) => `
-                                <div class="response">
-                                    <a href="${ensureAbsoluteUrl(res.videoUrl)}" target="_blank" rel="noopener noreferrer">
-                                        Voir réponse ${i+1}: ${res.title || 'Sans titre'}
-                                    </a>
-                                </div>
-                            `).join('')
-                        : `<a href="${ensureAbsoluteUrl(data.videoLink || "#")}" target="_blank" rel="noopener noreferrer" class="video-link">Voir la réponse</a>`
-                    : `<span class="pending-badge">⏳ En attente de réponse</span>`}
-                `;
+            //     // MASQUER les questions sans réponse
+            //     if (data.status !== 'answered') {
+            //         questionElement.style.display = 'none';
+            //         questionElement.classList.add('pending-question');
+            //     }
                 
-                questionsList.appendChild(questionElement);
-            });
+            //     questionElement.innerHTML = `
+            //         <h3>${data.text}</h3>
+            //         <div class="meta">
+            //             Catégorie: ${getCategoryName(data.category)} • 
+            //             Posée par: ${data.author || "Anonyme"} •
+            //             ${formatDate(data.createdAt?.toDate())}
+            //         </div>
+            //         ${data.status === "answered" ? 
+            //             data.responses && data.responses.length > 0 ?
+            //                 `<div class="youtube-responses">
+            //                     ${data.responses.map((res, i) => 
+            //                         createYouTubeThumbnail(res.videoUrl, res.title, i)
+            //                     ).join('')}
+            //                 </div>`
+            //             : `<a href="${ensureAbsoluteUrl(data.videoLink || "#")}" target="_blank" class="video-link">Voir la réponse</a>`
+            //         : ``}
+            //     `;
+                
+            //     questionsList.appendChild(questionElement);
+            // });
+
+            // paginatedQuestions.forEach((data) => {
+            //     const questionElement = document.createElement('div');
+            //     questionElement.className = `question ${data.status === "answered" ? "answered" : ""}`;
+            //     questionElement.dataset.id = data.id;
+
+            //     // MASQUER les questions sans réponse
+            //     if (data.status !== 'answered') {
+            //         questionElement.style.display = 'none';
+            //         questionElement.classList.add('pending-question');
+            //     }
+
+            //     questionElement.innerHTML = `
+            //         <h3>${data.text}</h3>
+            //         <div class="meta">
+            //             Catégorie: ${getCategoryName(data.category)} • 
+            //             Posée par: ${data.author || "Anonyme"} •
+            //             ${formatDate(data.createdAt?.toDate())}
+            //         </div>
+            //         ${data.status === "answered" ? 
+            //             data.responses && data.responses.length > 0 ?
+            //                 data.responses.map((res, i) => `
+            //                     <div class="response">
+            //                         <a href="${ensureAbsoluteUrl(res.videoUrl)}" target="_blank" rel="noopener noreferrer">
+            //                             Voir réponse ${i+1}: ${res.title || 'Sans titre'}
+            //                         </a>
+            //                     </div>
+            //                 `).join('')
+            //             : `<a href="${ensureAbsoluteUrl(data.videoLink || "#")}" target="_blank" rel="noopener noreferrer" class="video-link">Voir la réponse</a>`
+            //         : `<span class="pending-badge">⏳ En attente de réponse</span>`}
+            //     `;
+                
+            //     questionsList.appendChild(questionElement);
+            // });
                 
             //     questionElement.innerHTML = `
             //         <h3>${data.text}</h3>
@@ -458,6 +493,138 @@
         document.body.appendChild(toast);
         setTimeout(() => toast.remove(), 3000);
     }
+
+    // Fonction pour extraire l'ID YouTube depuis une URL
+    function getYouTubeId(url) {
+        const regex = /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/;
+        const match = url.match(regex);
+        return match ? match[1] : null;
+    }
+
+    // Fonction pour générer l'embed YouTube
+    // Fonction améliorée avec récupération du titre
+    function createYouTubeThumbnail(videoUrl, title, index) {
+        const videoId = getYouTubeId(videoUrl);
+        if (!videoId) {
+            return `<a href="${videoUrl}" target="_blank" class="video-link">Voir réponse ${index + 1}</a>`;
+        }
+
+        const displayTitle = title && title !== 'Sans titre' ? title : 'Chargement du titre...';
+
+        return `
+            <div class="youtube-thumbnail" data-video-id="${videoId}">
+                <img src="https://img.youtube.com/vi/${videoId}/mqdefault.jpg" 
+                     alt="Miniature ${displayTitle}" 
+                     class="thumbnail-image"
+                     loading="lazy">
+                <div class="play-button">▶</div>
+                <div class="video-info">
+                    <span class="video-title">${displayTitle} - Partie ${index + 1}</span>
+                    <span class="watch-text">Regarder sur YouTube</span>
+                </div>
+            </div>
+        `;
+    }
+
+    // Fonction pour récupérer le titre YouTube via l'API
+    // async function getYouTubeTitle(videoId) {
+    //     try {
+    //         // Version sans clé API (limité)
+    //         const response = await fetch(`https://noembed.com/embed?url=https://www.youtube.com/watch?v=${videoId}`);
+    //         const data = await response.json();
+    //         return data.title || 'Titre non disponible';
+    //     } catch (error) {
+    //         console.error('Erreur récupération titre YouTube:', error);
+    //         return 'Titre non disponible';
+    //     }
+    // }
+
+    // Cache pour les titres YouTube
+    const youtubeTitleCache = new Map();
+
+    async function getYouTubeTitle(videoId) {
+        // Vérifier le cache d'abord
+        if (youtubeTitleCache.has(videoId)) {
+            return youtubeTitleCache.get(videoId);
+        }
+
+        try {
+            const response = await fetch(`https://noembed.com/embed?url=https://www.youtube.com/watch?v=${videoId}`);
+            const data = await response.json();
+            
+            const title = data.title || 'Titre non disponible';
+            
+            // Mettre en cache
+            youtubeTitleCache.set(videoId, title);
+            
+            return title;
+        } catch (error) {
+            console.error('Erreur récupération titre:', error);
+            return 'Titre non disponible';
+        }
+    }
+
+    // Gestion des clics sur les miniatures YouTube
+    function setupYouTubeThumbnails() {
+        document.addEventListener('click', (event) => {
+            const thumbnail = event.target.closest('.youtube-thumbnail');
+            if (thumbnail) {
+                const videoId = thumbnail.dataset.videoId;
+                if (videoId) {
+                    window.open(`https://www.youtube.com/watch?v=${videoId}`, '_blank');
+                }
+            }
+        });
+    }
+
+    // Fonction pour ouvrir la vidéo (à ajouter)
+    function openYouTubeVideo(videoId) {
+        window.open(`https://www.youtube.com/watch?v=${videoId}`, '_blank');
+    }
+
+    // Nouvelle fonction d'affichage asynchrone
+    async function renderQuestionsWithThumbnails(questions) {
+        const questionsList = document.getElementById('questions-list');
+        questionsList.innerHTML = '';
+
+        for (const data of questions) {
+            const questionElement = document.createElement('div');
+            questionElement.className = `question ${data.status === "answered" ? "answered" : ""}`;
+            questionElement.dataset.id = data.id;
+
+            // MASQUER les questions sans réponse
+                if (data.status !== 'answered') {
+                    questionElement.style.display = 'none';
+                    questionElement.classList.add('pending-question');
+                }
+            
+            let responsesHTML = '';
+            
+            if (data.status === "answered" && data.responses && data.responses.length > 0) {
+                // Générer les miniatures pour chaque réponse
+                const thumbnails = [];
+                for (let i = 0; i < data.responses.length; i++) {
+                    const res = data.responses[i];
+                    const thumbnail = await createYouTubeThumbnail(res.videoUrl, res.title, i);
+                    thumbnails.push(thumbnail);
+                }
+                responsesHTML = `<div class="youtube-responses">${thumbnails.join('')}</div>`;
+            }
+            
+            questionElement.innerHTML = `
+                <h3>${data.text}</h3>
+                <div class="meta">
+                    Catégorie: ${getCategoryName(data.category)} • 
+                    Posée par: ${data.author || "Anonyme"} •
+                    ${formatDate(data.createdAt?.toDate())}
+                </div>
+                ${responsesHTML}
+            `;
+            
+            questionsList.appendChild(questionElement);
+        }
+    }
+
 
     // Chargement initial
     loadQuestions();
