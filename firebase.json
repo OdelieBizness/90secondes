@@ -14,7 +14,24 @@
     ],
     "headers": [
       {
-        "source": "**/*.@(js|css)",
+        "source": "**",
+        "headers": [
+          {
+            "key": "Cache-Control",
+            "value": "no-cache, no-store, must-revalidate"
+          },
+          {
+            "key": "Pragma",
+            "value": "no-cache"
+          },
+          {
+            "key": "Expires",
+            "value": "0"
+          }
+        ]
+      },
+      {
+        "source": "**/*.css",
         "headers": [
           {
           "key": "Content-Type",
@@ -46,24 +63,7 @@
           },
           {
             "key": "Cache-Control",
-            "value": "max-age=0, must-revalidate"
-          }
-        ]
-      },
-      {
-        "source": "**",
-        "headers": [
-          {
-            "key": "Cache-Control",
             "value": "no-cache, no-store, must-revalidate"
-          },
-          {
-            "key": "Pragma",
-            "value": "no-cache"
-          },
-          {
-            "key": "Expires",
-            "value": "0"
           }
         ]
       },

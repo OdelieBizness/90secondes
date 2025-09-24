@@ -1,6 +1,6 @@
 // sw.js - Service Worker corrigé pour "90 secondes avec Pasteur D"
 
-const CACHE_NAME = 'v15'; // Incrémentez la version
+const CACHE_NAME = 'v16'; // Incrémentez la version
 const SPLASH_CACHE = 'splash-v4';
 
 // Assets à mettre en cache (URLs valides uniquement)
