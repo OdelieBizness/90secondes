@@ -161,7 +161,6 @@
             }
 
             await renderQuestionsWithThumbnails(paginatedQuestions);
-            setupYouTubeThumbnails();
 
             // paginatedQuestions.forEach((data) => {
             //     const questionElement = document.createElement('div');
@@ -503,23 +502,25 @@
 
     // Fonction pour générer l'embed YouTube
     // Fonction améliorée avec récupération du titre
-    function createYouTubeThumbnail(videoUrl, title, index) {
+    async function createYouTubeThumbnail(videoUrl, title, index) {
         const videoId = getYouTubeId(videoUrl);
         if (!videoId) {
             return `<a href="${videoUrl}" target="_blank" class="video-link">Voir réponse ${index + 1}</a>`;
         }
 
-        const displayTitle = title && title !== 'Sans titre' ? title : 'Chargement du titre...';
+        // Si un titre personnalisé est fourni par l'admin, on l'utilise
+        const displayTitle = title && title !== 'Sans titre' ? title : await getYouTubeTitle(videoId);
 
         return `
-            <div class="youtube-thumbnail" data-video-id="${videoId}">
+            <div class="youtube-thumbnail" onclick="openYouTubeVideo('${videoId}')">
                 <img src="https://img.youtube.com/vi/${videoId}/mqdefault.jpg" 
                      alt="Miniature ${displayTitle}" 
                      class="thumbnail-image"
                      loading="lazy">
                 <div class="play-button">▶</div>
                 <div class="video-info">
-                    <span class="video-title">${displayTitle} - Partie ${index + 1}</span>
+                    <span class="video-title">${displayTitle}</span>
+                    <!-- <span class="video-title">${displayTitle} - Partie ${index + 1}</span> -->
                     <span class="watch-text">Regarder sur YouTube</span>
                 </div>
             </div>
@@ -564,19 +565,6 @@
         }
     }
 
-    // Gestion des clics sur les miniatures YouTube
-    function setupYouTubeThumbnails() {
-        document.addEventListener('click', (event) => {
-            const thumbnail = event.target.closest('.youtube-thumbnail');
-            if (thumbnail) {
-                const videoId = thumbnail.dataset.videoId;
-                if (videoId) {
-                    window.open(`https://www.youtube.com/watch?v=${videoId}`, '_blank');
-                }
-            }
-        });
-    }
-
     // Fonction pour ouvrir la vidéo (à ajouter)
     function openYouTubeVideo(videoId) {
         window.open(`https://www.youtube.com/watch?v=${videoId}`, '_blank');
@@ -592,7 +580,7 @@
             questionElement.className = `question ${data.status === "answered" ? "answered" : ""}`;
             questionElement.dataset.id = data.id;
 
-            // MASQUER les questions sans réponse
+            //MASQUER les questions sans réponse
                 if (data.status !== 'answered') {
                     questionElement.style.display = 'none';
                     questionElement.classList.add('pending-question');
@@ -615,16 +603,19 @@
                 <h3>${data.text}</h3>
                 <div class="meta">
                     Catégorie: ${getCategoryName(data.category)} • 
+                    Posée par: ${data.author || "Anonyme"}
+                </div>
+                <!-- <div class="meta">
+                    Catégorie: ${getCategoryName(data.category)} • 
                     Posée par: ${data.author || "Anonyme"} •
                     ${formatDate(data.createdAt?.toDate())}
-                </div>
+                </div> -->
                 ${responsesHTML}
             `;
             
             questionsList.appendChild(questionElement);
         }
     }
-
 
     // Chargement initial
     loadQuestions();
