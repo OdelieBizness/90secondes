@@ -1,3 +1,46 @@
+// Vérifier les mises à jour du Service Worker
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('/sw.js').then(registration => {
+    // Vérifier les mises à jour toutes les heures
+    setInterval(() => {
+      registration.update();
+    }, 60 * 60 * 1000);
+    
+    // Forcer la mise à jour au focus de la page
+    window.addEventListener('focus', () => {
+      registration.update();
+    });
+  });
+}
+
+// Forcer le rechargement si une nouvelle version est disponible
+let currentVersion = '1.2.3'; // Changez à chaque déploiement
+
+if (localStorage.getItem('appVersion') !== currentVersion) {
+  localStorage.setItem('appVersion', currentVersion);
+  window.location.reload(true); // Rechargement forcé
+}
+
+// Vérifier les mises à jour automatiquement
+const CHECK_UPDATE_INTERVAL = 5 * 60 * 1000; // Toutes les 5 minutes
+
+function checkForUpdates() {
+  fetch('/version.json?' + Date.now())
+    .then(response => response.json())
+    .then(remoteVersion => {
+      if (remoteVersion.current !== currentVersion) {
+        console.log('Nouvelle version disponible, rechargement...');
+        window.location.reload(true);
+      }
+    })
+    .catch(() => {
+      // Erreur silencieuse
+    });
+}
+
+// Créer un fichier version.json à la racine
+// {"current": "1.2.3"}
+
 // Gestion explicite de l'installation
     let deferredPrompt;
 
