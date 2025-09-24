@@ -112,6 +112,7 @@
 
 
     // Modifiez la fonction loadQuestions pour gérer la pagination
+
     async function loadQuestions(page = 1) {
         currentPage = page;
         const questionsList = document.getElementById('questions-list');
@@ -566,9 +567,12 @@
     }
 
     // Fonction pour ouvrir la vidéo (à ajouter)
-    function openYouTubeVideo(videoId) {
+    // function openYouTubeVideo(videoId) {
+    //     window.open(`https://www.youtube.com/watch?v=${videoId}`, '_blank');
+    // }
+    window.openYouTubeVideo = function(videoId) {
         window.open(`https://www.youtube.com/watch?v=${videoId}`, '_blank');
-    }
+    };
 
     // Nouvelle fonction d'affichage asynchrone
     async function renderQuestionsWithThumbnails(questions) {
@@ -618,4 +622,4 @@
     }
 
     // Chargement initial
-    loadQuestions();
+   // loadQuestions();
